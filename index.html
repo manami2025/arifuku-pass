@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>有福温泉 ARIFUKU PASS</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+      background: #e8e4dc;
+      color: #2c2c2c;
+      min-height: 100vh;
+    }
+
+    /* ヘッダー */
+    .header {
+      background: #e8e4dc;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .header img.logo {
+      position: absolute;
+      left: 16px;
+      height: 48px;
+      object-fit: contain;
+    }
+    .header-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: #3d6b4f;
+    }
+
+    /* ヒーローカード */
+    .hero-card {
+      margin: 0 12px 16px;
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      border: 1.5px solid #d6d0c4;
+    }
+    .hero-img-wrap {
+      padding: 10px 10px 0;
+    }
+    .hero-img-wrap img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 12px;
+      display: block;
+    }
+    .hero-info {
+      padding: 14px 16px 16px;
+    }
+    .hero-name-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .hero-name {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+    .hero-status {
+      font-size: 13px;
+      font-weight: 700;
+      color: #3d6b4f;
+      text-align: right;
+    }
+    .hero-status .stars {
+      font-size: 14px;
+      color: #3d6b4f;
+      letter-spacing: 2px;
+    }
+    .hero-welcome {
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* ウェルカムメッセージ */
+    .welcome {
+      text-align: center;
+      padding: 4px 20px 16px;
+      font-size: 13px;
+      color: #4a4a4a;
+      line-height: 1.8;
+    }
+
+    /* セクションタイトル */
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2c2c2c;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    /* フィルター */
+    .filter-section {
+      padding: 0 16px 16px;
+    }
+    .filter-wrap {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .filter-btn {
+      padding: 8px 18px;
+      border-radius: 24px;
+      border: none;
+      background: #3d6b4f;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s;
+      font-family: inherit;
+      opacity: 0.45;
+    }
+    .filter-btn.active,
+    .filter-btn:hover {
+      opacity: 1;
+    }
+
+    /* カード一覧 */
+    .card-section {
+      padding: 0 12px 32px;
+    }
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.09);
+      border: 1.5px solid #d6d0c4;
+      cursor: pointer;
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .card:active {
+      transform: scale(0.98);
+    }
+    .card-img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      display: block;
+    }
+    .card-img-placeholder {
+      width: 100%;
+      height: 150px;
+      background: #d6d0c4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8a8070;
+      font-size: 32px;
+    }
+    .card-body {
+      padding: 14px 16px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+    }
+    .card-desc {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .card-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .card-tag {
+      background: #e8e4dc;
+      color: #3d6b4f;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 10px;
+    }
+    .card-price {
+      font-size: 13px;
+      font-weight: 700;
+      color: #3d6b4f;
+      margin-left: auto;
+    }
+
+    /* ローディング */
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: #7a7060;
+      font-size: 13px;
+    }
+    .loading-spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #d6d0c4;
+      border-top-color: #3d6b4f;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      text-align: center;
+      padding: 32px 20px;
+      color: #c0392b;
+      font-size: 13px;
+    }
+    .empty-msg {
+      text-align: center;
+      padding: 32px 20px;
+      color: #7a7060;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <header class="header">
+    <img class="logo" src="ロゴ.png" alt="ARIFUKU PASS" onerror="this.style.display='none'">
+    <span class="header-title">ARIFUKU PASS</span>
+  </header>
+
+  <!-- ヒーローカード -->
+  <div class="hero-card">
+    <div class="hero-img-wrap">
+      <img src="有福温泉.JPG" alt="有福温泉"
+        onerror="this.src='https://placehold.co/800x440/d6d0c4/8a8070?text=有福温泉'">
+    </div>
+    <div class="hero-info">
+      <div class="hero-name-row">
+        <p class="hero-name" id="user-name">ゲスト 様</p>
+        <div class="hero-status">
+          <div id="status-label">新米住民</div>
+          <div class="stars" id="status-stars">★☆☆☆☆</div>
+        </div>
+      </div>
+      <p class="hero-welcome" id="welcome-msg">ようこそ有福温泉へ！たっぷり遊びましょう！</p>
+    </div>
+  </div>
+
+  <!-- ウェルカムメッセージ -->
+  <div class="welcome">
+    有福温泉がもっと楽しくなるコンテンツを集めました！<br>
+    湯ったりとした素敵な1日をお過ごしください。
+  </div>
+
+  <!-- フィルター -->
+  <div class="filter-section">
+    <p class="section-title">所要時間で選ぶ</p>
+    <div class="filter-wrap">
+      <button class="filter-btn active" data-filter="all">すべて</button>
+      <button class="filter-btn" data-filter="5">〜5分</button>
+      <button class="filter-btn" data-filter="30">〜30分</button>
+      <button class="filter-btn" data-filter="60">1時間</button>
+      <button class="filter-btn" data-filter="90">1時間30分</button>
+    </div>
+  </div>
+
+  <!-- 体験メニュー一覧 -->
+  <div class="card-section">
+    <p class="section-title">体験メニュー一覧</p>
+    <div class="card-list" id="card-list">
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        読み込み中...
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { LIFF_ID } from './config.js'
+    import { getMember, insertMember, getMemberStatus, getExperiences } from './api.js'
+
+    let allExperiences = []
+    let currentFilter = 'all'
+
+    // 所要時間→分数
+    function parseDuration(str) {
+      if (!str) return null
+      const h = str.match(/(\d+)\s*時間/)
+      const m = str.match(/(\d+)\s*分/)
+      let total = 0
+      if (h) total += parseInt(h[1]) * 60
+      if (m) total += parseInt(m[1])
+      return total || null
+    }
+
+    // 星表示（1〜5）
+    function renderStars(count) {
+      const n = Math.min(5, Math.max(0, count || 0))
+      return '★'.repeat(n) + '☆'.repeat(5 - n)
+    }
+
+    // フィルター適用
+    function applyFilter() {
+      let filtered = allExperiences
+      if (currentFilter !== 'all') {
+        const max = parseInt(currentFilter)
+        filtered = allExperiences.filter(e => {
+          const min = parseDuration(e.所要時間)
+          if (min === null) return true
+          return min <= max
+        })
+      }
+      renderCards(filtered)
+    }
+
+    // カード描画
+    function renderCards(list) {
+      const el = document.getElementById('card-list')
+      if (!list || list.length === 0) {
+        el.innerHTML = '<div class="empty-msg">該当する体験メニューがありません</div>'
+        return
+      }
+      el.innerHTML = list.map(e => `
+        <div class="card" onclick="openDetail('${e.experience_id}')">
+          ${e.image_url
+            ? `<img class="card-img" src="${e.image_url}" alt="${e.タイトル ?? ''}" loading="lazy">`
+            : `<div class="card-img-placeholder">♨</div>`
+          }
+          <div class="card-body">
+            <p class="card-title">${e.タイトル ?? ''}</p>
+            <p class="card-desc">${e.見出し説明 ?? ''}</p>
+            <div class="card-meta">
+              ${e.所要時間 ? `<span class="card-tag">⏱ ${e.所要時間}</span>` : ''}
+              ${e.体験場所 ? `<span class="card-tag">📍 ${e.体験場所}</span>` : ''}
+              ${e.料金 != null ? `<span class="card-price">¥${e.料金.toLocaleString()}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('')
+    }
+
+    window.openDetail = (id) => {
+      // TODO: 詳細画面へ遷移
+      console.log('detail:', id)
+    }
+
+    async function main() {
+      try {
+        await liff.init({ liffId: LIFF_ID })
+
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile()
+          const lineUserId = profile.userId
+          const displayName = profile.displayName
+
+          // 会員登録（初回のみ）
+          await insertMember(lineUserId, displayName)
+
+          // 会員情報
+          const member = await getMember(lineUserId)
+          const name = member?.ユーザー名 ?? displayName
+          document.getElementById('user-name').textContent = `${name} 様`
+
+          // ステータス
+          const status = await getMemberStatus(lineUserId)
+          if (status) {
+            document.getElementById('status-label').textContent = status.項目 ?? '新米住民'
+            document.getElementById('status-stars').textContent = renderStars(status.星)
+          }
+        } else {
+          liff.login()
+          return
+        }
+
+        // 体験一覧
+        allExperiences = await getExperiences()
+        applyFilter()
+
+      } catch (err) {
+        console.error(err)
+        document.getElementById('card-list').innerHTML =
+          `<div class="error-msg">読み込みに失敗しました<br><small>${err.message}</small></div>`
+      }
+    }
+
+    // フィルターボタン
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        currentFilter = btn.dataset.filter
+        applyFilter()
+      })
+    })
+
+    main()
+  </script>
+
+</body>
+</html>
