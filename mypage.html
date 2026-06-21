@@ -87,6 +87,16 @@
       cursor: pointer;
       font-family: inherit;
     }
+    .res-card .cancel-disabled-note {
+      margin-top: 10px;
+      width: 100%;
+      padding: 9px;
+      border-radius: 8px;
+      background: #f0ebe4;
+      color: #a08878;
+      font-size: 11px;
+      text-align: center;
+    }
 
     .empty {
       text-align: center;
@@ -144,6 +154,15 @@
     return `${d.getMonth()+1}/${d.getDate()}(${w})`
   }
 
+  function canCancel(dateStr) {
+    if (!dateStr) return true
+    const target = new Date(dateStr + 'T00:00:00')
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const diffDays = Math.floor((target - today) / (1000 * 60 * 60 * 24))
+    return diffDays >= 3
+  }
+
   async function loadReservations() {
     const el = document.getElementById('content')
     try {
@@ -163,7 +182,10 @@
           </div>
           <div class="detail-row">お名前：${r.氏名 ?? ''}</div>
           <div class="detail-row">人数：${r.人数 ?? 1}名</div>
-          <button class="cancel-btn" onclick="doCancel('${r.reservation_id}')">この予約をキャンセル</button>
+          ${canCancel(r.日付)
+            ? `<button class="cancel-btn" onclick="doCancel('${r.reservation_id}')">この予約をキャンセル</button>`
+            : `<div class="cancel-disabled-note">予約日の3日前を過ぎているためキャンセルできません</div>`
+          }
         </div>
       `).join('')
     } catch (err) {
