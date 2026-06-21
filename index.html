@@ -98,6 +98,24 @@
       font-size: 13px;
       color: #555;
     }
+    .hero-welcome-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .tutorial-link {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: #3d6b4f;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 2px 0;
+      font-family: inherit;
+    }
 
     /* 予約中の体験 */
     .my-reservations {
@@ -304,7 +322,7 @@
   <header class="header">
     <img class="logo" src="ロゴ.png" alt="ARIFUKU PASS" onerror="this.style.display='none'">
     <span class="header-title">ARIFUKU PASS</span>
-    <button class="mypage-btn" onclick="location.href='mypage.html'">マイページ</button>
+    <button class="mypage-btn" onclick="location.href='mypage.html'">予約一覧</button>
   </header>
 
   <!-- ヒーローカード -->
@@ -321,7 +339,10 @@
           <div class="stars" id="status-stars">★☆☆☆☆</div>
         </div>
       </div>
-      <p class="hero-welcome" id="welcome-msg">ようこそ有福温泉へ！たっぷり遊びましょう！</p>
+      <div class="hero-welcome-row">
+        <p class="hero-welcome" id="welcome-msg">ようこそ有福温泉へ！たっぷり遊びましょう！</p>
+        <button class="tutorial-link" onclick="location.href='tutorial.html?from=settings'">使い方</button>
+      </div>
     </div>
   </div>
 
@@ -478,6 +499,13 @@
 
           // 会員情報
           const member = await getMember(lineUserId)
+
+          // 規約未同意なら利用規約ページへ
+          if (!member?.規約同意済み) {
+            location.href = 'terms.html'
+            return
+          }
+
           const name = member?.ユーザー名 ?? displayName
           document.getElementById('user-name').textContent = `${name} 様`
 

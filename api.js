@@ -63,6 +63,17 @@ export async function insertMember(lineUserId, userName) {
 }
 
 /**
+ * 利用規約への同意を記録
+ * @param {string} lineUserId
+ */
+export async function agreeToTerms(lineUserId) {
+  const { error } = await supabase.rpc('agree_to_terms', {
+    p_line_user_id: lineUserId
+  })
+  if (error) throw error
+}
+
+/**
  * 参加回数を+1する（クライアントから値を指定させない）
  * @param {string} lineUserId
  */

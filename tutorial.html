@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>使い方ガイド | 有福温泉 ARIFUKU PASS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+      background: #3d6b4f;
+      color: #fff;
+      overflow: hidden;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .skip-bar {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: flex-end;
+      padding: 16px 18px 0;
+    }
+    .skip-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.75);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 10px;
+    }
+
+    .slides-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 32px 40px;
+      text-align: center;
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      pointer-events: none;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    .slide.prev {
+      transform: translateX(-40px);
+    }
+
+    .slide-icon {
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 44px;
+      margin-bottom: 28px;
+    }
+    .slide-title {
+      font-size: 21px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .slide-body {
+      font-size: 14px;
+      line-height: 1.9;
+      color: rgba(255,255,255,0.88);
+      max-width: 320px;
+    }
+
+    .bottom-area {
+      flex-shrink: 0;
+      padding: 0 24px calc(28px + env(safe-area-inset-bottom));
+    }
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      transition: all 0.2s;
+    }
+    .dot.active {
+      width: 20px;
+      border-radius: 4px;
+      background: #fff;
+    }
+
+    .next-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 26px;
+      border: none;
+      background: #fff;
+      color: #3d6b4f;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="skip-bar">
+    <button class="skip-btn" id="skip-btn">スキップ</button>
+  </div>
+
+  <div class="slides-wrap">
+    <div class="slide active" data-index="0">
+      <div class="slide-icon">♨</div>
+      <div class="slide-title">有福温泉へようこそ！</div>
+      <div class="slide-body">ARIFUKU PASSを使って、<br>有福温泉で素敵な時間を<br>お過ごしください。</div>
+    </div>
+
+    <div class="slide" data-index="1">
+      <div class="slide-icon">📅</div>
+      <div class="slide-title">体験を予約しよう</div>
+      <div class="slide-body">気になる体験をタップして、<br>カレンダーから空いている<br>日時を選ぶだけで予約完了です。</div>
+    </div>
+
+    <div class="slide" data-index="2">
+      <div class="slide-icon">⭐</div>
+      <div class="slide-title">参加するほどランクアップ</div>
+      <div class="slide-body">体験に参加した回数に応じて、<br>「新米住民」から少しずつ<br>有福温泉での住民ランクが上がります。</div>
+    </div>
+
+    <div class="slide" data-index="3">
+      <div class="slide-icon">📋</div>
+      <div class="slide-title">予約一覧でいつでも確認</div>
+      <div class="slide-body">右上の「予約一覧」から、<br>自分の予約内容の確認や<br>キャンセルがいつでもできます。</div>
+    </div>
+  </div>
+
+  <div class="bottom-area">
+    <div class="dots" id="dots"></div>
+    <button class="next-btn" id="next-btn">はじめる</button>
+  </div>
+
+<script>
+  const params = new URLSearchParams(location.search)
+  const fromSettings = params.get('from') === 'settings'
+
+  const slides = document.querySelectorAll('.slide')
+  const dotsEl = document.getElementById('dots')
+  const nextBtn = document.getElementById('next-btn')
+  const skipBtn = document.getElementById('skip-btn')
+  let current = 0
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div')
+    dot.className = 'dot' + (i === 0 ? ' active' : '')
+    dotsEl.appendChild(dot)
+  })
+  const dots = document.querySelectorAll('.dot')
+
+  function render() {
+    slides.forEach((s, i) => {
+      s.classList.toggle('active', i === current)
+      s.classList.toggle('prev', i < current)
+    })
+    dots.forEach((d, i) => d.classList.toggle('active', i === current))
+    nextBtn.textContent = current === slides.length - 1 ? 'はじめる' : '次へ'
+  }
+
+  function goNext() {
+    if (current < slides.length - 1) {
+      current++
+      render()
+    } else {
+      finish()
+    }
+  }
+
+  function finish() {
+    if (fromSettings) {
+      location.href = 'index.html'
+    } else {
+      location.href = 'index.html'
+    }
+  }
+
+  nextBtn.addEventListener('click', goNext)
+  skipBtn.addEventListener('click', finish)
+
+  // スワイプ対応
+  let touchStartX = null
+  document.querySelector('.slides-wrap').addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX
+  })
+  document.querySelector('.slides-wrap').addEventListener('touchend', (e) => {
+    if (touchStartX === null) return
+    const diff = e.changedTouches[0].clientX - touchStartX
+    if (diff < -40 && current < slides.length - 1) { current++; render() }
+    if (diff > 40 && current > 0) { current--; render() }
+    touchStartX = null
+  })
+
+  render()
+</script>
+
+</body>
+</html>
