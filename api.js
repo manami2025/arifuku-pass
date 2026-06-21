@@ -95,6 +95,7 @@ export async function getReservations(lineUserId) {
  * @param {Object} params
  * @param {string} params.lineUserId
  * @param {string} params.experienceId  - 体験内容のUUID
+ * @param {string} params.slotId        - 予約枠のUUID
  * @param {string} params.date          - 例: '2026-07-01'
  * @param {string} params.time          - 例: '10:00:00'
  * @param {string} params.name          - 氏名
@@ -105,6 +106,7 @@ export async function insertReservation(params) {
   const { error } = await supabase.rpc('insert_reservation', {
     p_line_user_id:   params.lineUserId,
     p_experience_id:  params.experienceId,
+    p_slot_id:        params.slotId,
     p_date:           params.date,
     p_time:           params.time,
     p_name:           params.name,
@@ -125,6 +127,19 @@ export async function getAvailableSlots(experienceId) {
   })
   if (error) throw error
   return data ?? []
+}
+
+/**
+ * 予約をキャンセル（本人のLINE USER IDと一致する場合のみ）
+ * @param {string} reservationId
+ * @param {string} lineUserId
+ */
+export async function cancelReservation(reservationId, lineUserId) {
+  const { error } = await supabase.rpc('cancel_reservation', {
+    p_reservation_id: reservationId,
+    p_line_user_id: lineUserId
+  })
+  if (error) throw error
 }
 
 // -----------------------------------------------

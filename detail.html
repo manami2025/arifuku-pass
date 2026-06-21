@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>体験詳細 | 有福温泉 ARIFUKU PASS</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+      background: #e8e4dc;
+      color: #2c2c2c;
+      min-height: 100vh;
+      padding-bottom: 100px;
+    }
+
+    .header {
+      background: #e8e4dc;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .back-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: #fff;
+      border: none;
+      font-size: 16px;
+      color: #3d6b4f;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .header-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #3d6b4f;
+    }
+
+    .hero-img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+    }
+    .hero-img-placeholder {
+      width: 100%;
+      height: 220px;
+      background: #d6d0c4;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+      color: #a08878;
+    }
+
+    .content { padding: 18px 16px; }
+    .title { font-size: 19px; font-weight: 800; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; color: #666; line-height: 1.7; margin-bottom: 14px; }
+
+    .meta-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .meta-tag {
+      background: #fff;
+      border: 1.5px solid #d6d0c4;
+      color: #3d6b4f;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 16px;
+    }
+
+    .section { margin-bottom: 20px; }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #3d6b4f;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1.5px solid #d6d0c4;
+    }
+    .section-body {
+      font-size: 13px;
+      color: #444;
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    /* カレンダー */
+    .cal-wrap {
+      background: #fff;
+      border: 1.5px solid #d6d0c4;
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #3d6b4f;
+    }
+    .cal-nav {
+      background: none; border: none;
+      font-size: 20px; color: #3d6b4f;
+      cursor: pointer; padding: 0 10px; line-height: 1;
+    }
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 11px;
+      color: #999;
+      margin-bottom: 6px;
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: default;
+      background: transparent;
+      color: #ccc;
+      position: relative;
+    }
+    .cal-day.available {
+      background: #f0ebe4;
+      color: #3d6b4f;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .cal-day.available::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: #3d6b4f;
+    }
+    .cal-day.selected {
+      background: #3d6b4f;
+      color: #fff;
+    }
+    .cal-day.selected::after { background: #fff; }
+
+    .time-list {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .time-list-title { font-size: 12px; color: #888; margin-bottom: 4px; }
+    .time-slot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #faf8f5;
+      border: 1.5px solid #d6d0c4;
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .time-slot.selected {
+      border-color: #3d6b4f;
+      background: #e3efe6;
+    }
+    .time-slot .slot-time { font-weight: 700; }
+    .time-slot .slot-remain {
+      font-size: 11px;
+      color: #3d6b4f;
+      font-weight: 700;
+      background: #fff;
+      padding: 3px 9px;
+      border-radius: 10px;
+    }
+
+    .empty-note {
+      text-align: center;
+      padding: 24px;
+      color: #a08878;
+      font-size: 12px;
+    }
+
+    /* 予約フォーム */
+    .res-form {
+      background: #fff;
+      border: 1.5px solid #d6d0c4;
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 14px;
+      display: none;
+    }
+    .res-form.show { display: block; }
+    .res-form-row { margin-bottom: 12px; }
+    .res-form-row label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .res-form-row input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #d6d0c4;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .count-stepper {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .count-stepper button {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1.5px solid #3d6b4f;
+      background: #fff;
+      color: #3d6b4f;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .count-stepper span { font-size: 16px; font-weight: 700; min-width: 24px; text-align: center; }
+
+    /* 下部固定の予約ボタン */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #fff;
+      border-top: 1.5px solid #d6d0c4;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 60;
+    }
+    .bottom-bar .price { font-size: 15px; font-weight: 800; color: #3d6b4f; }
+    .bottom-bar button {
+      background: #3d6b4f;
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .bottom-bar button:disabled { background: #c8c0b0; cursor: not-allowed; }
+
+    .toast {
+      position: fixed;
+      top: 16px; left: 50%;
+      transform: translateX(-50%);
+      background: #2c2c2c;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 12px;
+      z-index: 100;
+      display: none;
+    }
+    .toast.show { display: block; }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #a08878;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <button class="back-btn" onclick="location.href='index.html'">‹</button>
+    <span class="header-title">体験詳細</span>
+  </div>
+
+  <div id="page-body">
+    <div class="loading">読み込み中...</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script type="module">
+  import { LIFF_ID } from './config.js'
+  import { getMember, insertMember, getExperiences, getAvailableSlots, insertReservation } from './api.js'
+
+  const params = new URLSearchParams(location.search)
+  const experienceId = params.get('id')
+
+  let experience = null
+  let lineUserId = null
+  let memberName = 'ゲスト'
+
+  let slotsCache = []          // 空き枠一覧（全体）
+  let slotsByDate = {}         // 日付ごとにグループ化
+  let calViewYear, calViewMonth
+  let selectedDate = null
+  let selectedSlot = null
+  let count = 1
+
+  function showToast(msg) {
+    const t = document.getElementById('toast')
+    t.textContent = msg
+    t.classList.add('show')
+    setTimeout(() => t.classList.remove('show'), 2500)
+  }
+
+  async function main() {
+    if (!experienceId) {
+      document.getElementById('page-body').innerHTML = '<div class="loading">体験が見つかりません</div>'
+      return
+    }
+
+    try {
+      await liff.init({ liffId: LIFF_ID })
+      if (!liff.isLoggedIn()) { liff.login(); return }
+
+      const profile = await liff.getProfile()
+      lineUserId = profile.userId
+      await insertMember(lineUserId, profile.displayName)
+      const member = await getMember(lineUserId)
+      memberName = member?.ユーザー名 ?? profile.displayName
+
+      const all = await getExperiences()
+      experience = all.find(e => e.experience_id === experienceId)
+      if (!experience) {
+        document.getElementById('page-body').innerHTML = '<div class="loading">体験が見つかりません</div>'
+        return
+      }
+
+      slotsCache = await getAvailableSlots(experienceId)
+      groupSlotsByDate()
+
+      renderDetail()
+
+      const now = new Date()
+      calViewYear = now.getFullYear()
+      calViewMonth = now.getMonth()
+      renderCalendar()
+
+    } catch (err) {
+      console.error(err)
+      document.getElementById('page-body').innerHTML =
+        `<div class="loading">読み込みに失敗しました<br><small>${err.message}</small></div>`
+    }
+  }
+
+  function groupSlotsByDate() {
+    slotsByDate = {}
+    for (const s of slotsCache) {
+      if (!slotsByDate[s.日付]) slotsByDate[s.日付] = []
+      slotsByDate[s.日付].push(s)
+    }
+  }
+
+  function renderDetail() {
+    const e = experience
+    document.getElementById('page-body').innerHTML = `
+      ${e.image_url
+        ? `<img class="hero-img" src="${e.image_url}" alt="${e.タイトル}">`
+        : `<div class="hero-img-placeholder">♨</div>`
+      }
+      <div class="content">
+        <div class="title">${e.タイトル ?? ''}</div>
+        <div class="subtitle">${e.見出し説明 ?? ''}</div>
+
+        <div class="meta-row">
+          ${e.所要時間 ? `<span class="meta-tag">⏱ ${e.所要時間}</span>` : ''}
+          ${e.料金 != null ? `<span class="meta-tag">¥${e.料金.toLocaleString()}</span>` : ''}
+          ${e.体験場所 ? `<span class="meta-tag">📍 ${e.体験場所}</span>` : ''}
+        </div>
+
+        ${e.体験内容詳細 ? `
+        <div class="section">
+          <div class="section-title">体験内容</div>
+          <div class="section-body">${e.体験内容詳細}</div>
+        </div>` : ''}
+
+        ${e.持ち物 || e.注意事項 || e.集合場所 ? `
+        <div class="section">
+          <div class="section-title">ご案内</div>
+          <div class="section-body">${[
+            e.集合場所 ? `集合場所：${e.集合場所}` : '',
+            e.持ち物 ? `持ち物：${e.持ち物}` : '',
+            e.注意事項 ? `注意事項：${e.注意事項}` : ''
+          ].filter(Boolean).join('\\n')}</div>
+        </div>` : ''}
+
+        <div class="section">
+          <div class="section-title">日時を選ぶ</div>
+          <div class="cal-wrap">
+            <div class="cal-header">
+              <button class="cal-nav" onclick="calShiftMonth(-1)">‹</button>
+              <span id="cal-month-label"></span>
+              <button class="cal-nav" onclick="calShiftMonth(1)">›</button>
+            </div>
+            <div class="cal-weekdays">
+              <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
+            <div class="time-list" id="time-list"></div>
+          </div>
+        </div>
+
+        <div class="res-form" id="res-form">
+          <div class="res-form-row">
+            <label>お名前</label>
+            <input id="res-name" value="${memberName}">
+          </div>
+          <div class="res-form-row">
+            <label>人数</label>
+            <div class="count-stepper">
+              <button type="button" onclick="changeCount(-1)">−</button>
+              <span id="count-display">1</span>
+              <button type="button" onclick="changeCount(1)">＋</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-bar">
+        <span class="price">${e.料金 != null ? '¥' + e.料金.toLocaleString() + ' / 人' : ''}</span>
+        <button id="reserve-btn" disabled onclick="doReserve()">日時を選択してください</button>
+      </div>
+    `
+  }
+
+  // ---------------- カレンダー ----------------
+  function pad2(n) { return String(n).padStart(2, '0') }
+  function toDateStr(y, m, d) { return `${y}-${pad2(m + 1)}-${pad2(d)}` }
+
+  window.calShiftMonth = (diff) => {
+    calViewMonth += diff
+    if (calViewMonth < 0) { calViewMonth = 11; calViewYear-- }
+    if (calViewMonth > 11) { calViewMonth = 0; calViewYear++ }
+    selectedDate = null
+    selectedSlot = null
+    renderCalendar()
+    renderTimeList()
+    updateReserveButton()
+  }
+
+  function renderCalendar() {
+    document.getElementById('cal-month-label').textContent = `${calViewYear}年 ${calViewMonth + 1}月`
+    const grid = document.getElementById('cal-grid')
+    const firstDay = new Date(calViewYear, calViewMonth, 1).getDay()
+    const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate()
+
+    let html = ''
+    for (let i = 0; i < firstDay; i++) html += `<div class="cal-day"></div>`
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = toDateStr(calViewYear, calViewMonth, d)
+      const hasSlots = !!slotsByDate[dateStr]
+      const isSelected = dateStr === selectedDate
+      const cls = ['cal-day']
+      if (hasSlots) cls.push('available')
+      if (isSelected) cls.push('selected')
+      html += `<div class="${cls.join(' ')}" ${hasSlots ? `onclick="selectDate('${dateStr}')"` : ''}>${d}</div>`
+    }
+    grid.innerHTML = html
+  }
+
+  window.selectDate = (dateStr) => {
+    selectedDate = dateStr
+    selectedSlot = null
+    renderCalendar()
+    renderTimeList()
+    updateReserveButton()
+  }
+
+  function renderTimeList() {
+    const el = document.getElementById('time-list')
+    if (!selectedDate) {
+      el.innerHTML = ''
+      return
+    }
+    const slots = slotsByDate[selectedDate] || []
+    if (slots.length === 0) {
+      el.innerHTML = '<div class="empty-note">この日に空き枠はありません</div>'
+      return
+    }
+    el.innerHTML = `
+      <div class="time-list-title">時間を選ぶ</div>
+      ${slots.map(s => `
+        <div class="time-slot ${selectedSlot?.slot_id === s.slot_id ? 'selected' : ''}" onclick="selectSlot('${s.slot_id}')">
+          <span class="slot-time">${(s.開始時刻 ?? '').slice(0,5)}${s.終了時刻 ? '〜' + s.終了時刻.slice(0,5) : ''}</span>
+          <span class="slot-remain">残り${s.残り枠}枠</span>
+        </div>
+      `).join('')}
+    `
+  }
+
+  window.selectSlot = (slotId) => {
+    const slots = slotsByDate[selectedDate] || []
+    selectedSlot = slots.find(s => s.slot_id === slotId)
+    renderTimeList()
+    updateReserveButton()
+  }
+
+  function updateReserveButton() {
+    const btn = document.getElementById('reserve-btn')
+    const form = document.getElementById('res-form')
+    if (selectedSlot) {
+      btn.disabled = false
+      btn.textContent = '予約する'
+      form.classList.add('show')
+    } else {
+      btn.disabled = true
+      btn.textContent = '日時を選択してください'
+      form.classList.remove('show')
+    }
+  }
+
+  window.changeCount = (diff) => {
+    count = Math.max(1, count + diff)
+    document.getElementById('count-display').textContent = count
+  }
+
+  window.doReserve = async () => {
+    if (!selectedSlot) return
+    const btn = document.getElementById('reserve-btn')
+    const name = document.getElementById('res-name').value.trim() || memberName
+
+    btn.disabled = true
+    btn.textContent = '予約中...'
+
+    try {
+      await insertReservation({
+        lineUserId,
+        experienceId,
+        slotId: selectedSlot.slot_id,
+        date: selectedDate,
+        time: selectedSlot.開始時刻,
+        name,
+        content: experience.タイトル,
+        count
+      })
+      showToast('予約が完了しました！')
+      setTimeout(() => { location.href = 'mypage.html' }, 1200)
+    } catch (err) {
+      showToast('予約に失敗しました：' + err.message)
+      btn.disabled = false
+      btn.textContent = '予約する'
+    }
+  }
+
+  main()
+</script>
+
+</body>
+</html>

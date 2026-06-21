@@ -36,6 +36,19 @@
       letter-spacing: 0.12em;
       color: #3d6b4f;
     }
+    .mypage-btn {
+      position: absolute;
+      right: 16px;
+      background: #fff;
+      border: 1.5px solid #3d6b4f;
+      color: #3d6b4f;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-family: inherit;
+    }
 
     /* ヒーローカード */
     .hero-card {
@@ -244,6 +257,7 @@
   <header class="header">
     <img class="logo" src="ロゴ.png" alt="ARIFUKU PASS" onerror="this.style.display='none'">
     <span class="header-title">ARIFUKU PASS</span>
+    <button class="mypage-btn" onclick="location.href='mypage.html'">マイページ</button>
   </header>
 
   <!-- ヒーローカード -->
@@ -358,8 +372,7 @@
     }
 
     window.openDetail = (id) => {
-      // TODO: 詳細画面へ遷移
-      console.log('detail:', id)
+      location.href = `detail.html?id=${encodeURIComponent(id)}`
     }
 
     async function main() {
