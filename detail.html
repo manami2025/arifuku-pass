@@ -92,6 +92,34 @@
       white-space: pre-wrap;
     }
 
+    .place-block {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .place-row {
+      background: #faf8f5;
+      border: 1.5px solid #d6d0c4;
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+    .place-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #3d6b4f;
+      margin-bottom: 2px;
+    }
+    .place-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #2c2c2c;
+    }
+    .place-address {
+      font-size: 12px;
+      color: #888;
+      margin-top: 2px;
+    }
+
     /* カレンダー */
     .cal-wrap {
       background: #fff;
@@ -395,14 +423,34 @@
           <div class="section-body">${e.体験内容詳細}</div>
         </div>` : ''}
 
-        ${e.持ち物 || e.注意事項 || e.集合場所 ? `
+        ${e.集合場所 || e.体験場所 ? `
+        <div class="section">
+          <div class="section-title">場所</div>
+          <div class="place-block">
+            ${e.集合場所 ? `
+              <div class="place-row">
+                <div class="place-label">集合場所</div>
+                <div class="place-name">${e.集合場所}</div>
+                ${e.集合場所住所 ? `<div class="place-address">${e.集合場所住所}</div>` : ''}
+              </div>
+            ` : ''}
+            ${e.体験場所 ? `
+              <div class="place-row">
+                <div class="place-label">体験場所</div>
+                <div class="place-name">${e.体験場所}</div>
+                ${e.体験場所住所 ? `<div class="place-address">${e.体験場所住所}</div>` : ''}
+              </div>
+            ` : ''}
+          </div>
+        </div>` : ''}
+
+        ${e.持ち物 || e.注意事項 ? `
         <div class="section">
           <div class="section-title">ご案内</div>
           <div class="section-body">${[
-            e.集合場所 ? `集合場所：${e.集合場所}` : '',
             e.持ち物 ? `持ち物：${e.持ち物}` : '',
             e.注意事項 ? `注意事項：${e.注意事項}` : ''
-          ].filter(Boolean).join('\\n')}</div>
+          ].filter(Boolean).join('<br>')}</div>
         </div>` : ''}
 
         <div class="section">

@@ -337,7 +337,9 @@ export async function adminInsertExperience(e) {
     p_notice:         e.注意事項,
     p_belongings:     e.持ち物,
     p_place:          e.体験場所,
-    p_meeting_place:  e.集合場所
+    p_place_address:  e.体験場所住所,
+    p_meeting_place:  e.集合場所,
+    p_meeting_address: e.集合場所住所
   })
   if (error) throw error
   return data
@@ -361,7 +363,9 @@ export async function adminUpdateExperience(id, e) {
     p_notice:         e.注意事項,
     p_belongings:     e.持ち物,
     p_place:          e.体験場所,
-    p_meeting_place:  e.集合場所
+    p_place_address:  e.体験場所住所,
+    p_meeting_place:  e.集合場所,
+    p_meeting_address: e.集合場所住所
   })
   if (error) throw error
 }

@@ -395,6 +395,124 @@
     cursor: pointer;
   }
 
+  /* ---------- スマホ対応 ---------- */
+  @media (max-width: 680px) {
+    .topbar {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 12px 14px;
+      gap: 10px;
+    }
+    .topbar h1 { font-size: 13px; text-align: center; }
+    .topbar-right {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .tabs {
+      justify-content: center;
+    }
+    .tab-btn {
+      flex: 1 1 auto;
+      text-align: center;
+      padding: 8px 10px;
+      font-size: 11px;
+    }
+    .user-info {
+      justify-content: space-between;
+      border-left: none;
+      border-top: 1.5px solid #e0dace;
+      padding-left: 0;
+      padding-top: 8px;
+    }
+
+    .panel { padding: 14px; }
+    .panel-head {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .panel-head h2 { text-align: center; }
+    .panel-head .btn { width: 100%; }
+
+    /* 体験内容の行 */
+    .exp-row {
+      flex-wrap: wrap;
+      padding: 12px;
+    }
+    .exp-row .info {
+      flex: 1 1 100%;
+      order: 2;
+    }
+    .exp-row img,
+    .exp-row .no-img {
+      width: 44px; height: 44px;
+    }
+    .exp-row .actions {
+      flex: 1 1 100%;
+      order: 3;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      margin-top: 4px;
+    }
+
+    /* 予約枠ツールバー・行 */
+    .slot-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .slot-toolbar select,
+    .slot-toolbar input {
+      width: 100%;
+    }
+    .slot-row {
+      flex-wrap: wrap;
+      gap: 6px 10px;
+    }
+    .slot-row .date { width: auto; }
+    .slot-row .time { width: auto; }
+    .slot-row .exp-title {
+      flex: 1 1 100%;
+      order: 3;
+    }
+    .slot-row .cap { order: 4; }
+
+    /* 予約一覧 */
+    .res-row { flex-wrap: wrap; gap: 4px 10px; }
+    .res-row .date { width: auto; }
+    .res-row .time { width: auto; }
+    .res-row .exp-title { flex: 1 1 100%; width: auto; order: 3; }
+    .res-row .name { flex: 1 1 100%; order: 4; }
+
+    /* ユーザー一覧 */
+    .user-row {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .user-row .actions {
+      flex: 1 1 100%;
+      display: flex;
+      gap: 6px;
+    }
+    .user-row .actions .btn { flex: 1; }
+
+    /* モーダル */
+    .modal-bg { padding: 0; align-items: stretch; }
+    .modal {
+      max-width: 100%;
+      width: 100%;
+      min-height: 100%;
+      border-radius: 0;
+      padding: 18px 16px 28px;
+    }
+    .modal-wide { max-width: 100%; }
+    .field-row { flex-direction: column; gap: 0; }
+
+    /* カレンダー */
+    .cal-day { font-size: 11px; }
+    .cal-weekdays { font-size: 9px; }
+  }
+
   /* ---------- 予約枠タブ ---------- */
   .slot-toolbar {
     display: flex;
@@ -642,6 +760,10 @@
       <div class="field-row">
         <div class="field"><label>体験場所</label><input id="exp-place"></div>
         <div class="field"><label>集合場所</label><input id="exp-meeting"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>体験場所の住所</label><input id="exp-place-address" placeholder="島根県江津市有福温泉町..."></div>
+        <div class="field"><label>集合場所の住所</label><input id="exp-meeting-address" placeholder="島根県江津市有福温泉町..."></div>
       </div>
       <div class="modal-actions">
         <button class="btn btn-outline" onclick="closeExpForm()">キャンセル</button>
@@ -933,11 +1055,14 @@
       document.getElementById('exp-notice').value = e.注意事項 ?? ''
       document.getElementById('exp-belongings').value = e.持ち物 ?? ''
       document.getElementById('exp-place').value = e.体験場所 ?? ''
+      document.getElementById('exp-place-address').value = e.体験場所住所 ?? ''
       document.getElementById('exp-meeting').value = e.集合場所 ?? ''
+      document.getElementById('exp-meeting-address').value = e.集合場所住所 ?? ''
     } else {
       document.getElementById('exp-modal-title').textContent = '体験内容を追加'
       ;['exp-id','exp-title','exp-subtitle','exp-image','exp-price','exp-duration',
-        'exp-schedule','exp-detail','exp-notice','exp-belongings','exp-place','exp-meeting']
+        'exp-schedule','exp-detail','exp-notice','exp-belongings','exp-place','exp-place-address',
+        'exp-meeting','exp-meeting-address']
         .forEach(id => document.getElementById(id).value = '')
       setExpImagePreview(null)
     }
@@ -1032,7 +1157,9 @@
       注意事項:     document.getElementById('exp-notice').value || null,
       持ち物:       document.getElementById('exp-belongings').value || null,
       体験場所:     document.getElementById('exp-place').value || null,
+      体験場所住所: document.getElementById('exp-place-address').value || null,
       集合場所:     document.getElementById('exp-meeting').value || null,
+      集合場所住所: document.getElementById('exp-meeting-address').value || null,
     }
 
     try {
