@@ -158,6 +158,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
+    min-width: 0;
   }
   .exp-row img {
     width: 56px; height: 56px;
@@ -175,7 +176,14 @@
     flex-shrink: 0;
   }
   .exp-row .info { flex: 1; min-width: 0; }
-  .exp-row .info .title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .exp-row .info .title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .exp-row .info .meta { font-size: 11px; color: #888; }
   .exp-row .actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 
@@ -321,22 +329,81 @@
     color: #888;
     margin-bottom: 12px;
   }
-  .res-list { display: flex; flex-direction: column; gap: 8px; }
+  .res-toolbar {
+    margin-bottom: 14px;
+  }
+  .res-toolbar select {
+    padding: 8px 10px;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .res-cal-wrap {
+    background: #fff;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 14px;
+    padding: 16px;
+    max-width: 480px;
+    margin-bottom: 18px;
+  }
+  .res-cal-grid .cal-day {
+    cursor: default;
+    position: relative;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .res-cal-grid .cal-day.has-res {
+    background: #f0ebe4;
+    color: #3d6b4f;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .res-cal-grid .cal-day.has-res .res-count {
+    font-size: 9px;
+    font-weight: 700;
+    background: #3d6b4f;
+    color: #fff;
+    border-radius: 8px;
+    padding: 1px 5px;
+    margin-top: 1px;
+  }
+  .res-cal-grid .cal-day.selected {
+    background: #3d6b4f;
+    color: #fff;
+  }
+  .res-cal-grid .cal-day.selected .res-count {
+    background: #fff;
+    color: #3d6b4f;
+  }
+
+  .res-day-detail { display: flex; flex-direction: column; gap: 8px; }
   .res-row {
     background: #fff;
     border: 1.5px solid #d6d0c4;
     border-radius: 10px;
-    padding: 12px 16px;
+    padding: 12px 14px;
     display: flex;
     align-items: center;
     gap: 14px;
     font-size: 13px;
     flex-wrap: wrap;
+    min-width: 0;
   }
-  .res-row .date { font-weight: 700; width: 90px; flex-shrink: 0; }
-  .res-row .time { color: #555; width: 60px; flex-shrink: 0; }
-  .res-row .exp-title { width: 200px; color: #333; flex-shrink: 0; }
-  .res-row .name { flex: 1; min-width: 100px; color: #444; }
+  .res-row .time { color: #555; width: 56px; flex-shrink: 0; font-weight: 700; }
+  .res-row .exp-title {
+    width: 180px;
+    color: #333;
+    flex-shrink: 0;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .res-row .name { flex: 1; min-width: 0; color: #444; }
   .res-row .count {
     font-size: 11px;
     font-weight: 700;
@@ -344,6 +411,13 @@
     border-radius: 10px;
     background: #f0ebe4;
     color: #3d6b4f;
+    flex-shrink: 0;
+  }
+  .res-day-detail .day-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #3d6b4f;
+    margin-bottom: 4px;
   }
 
   /* ---------- ユーザー管理 ---------- */
@@ -474,15 +548,17 @@
     .slot-row .exp-title {
       flex: 1 1 100%;
       order: 3;
+      white-space: normal;
     }
     .slot-row .cap { order: 4; }
 
     /* 予約一覧 */
+    .res-cal-wrap { padding: 12px; max-width: 100%; }
     .res-row { flex-wrap: wrap; gap: 4px 10px; }
-    .res-row .date { width: auto; }
     .res-row .time { width: auto; }
-    .res-row .exp-title { flex: 1 1 100%; width: auto; order: 3; }
-    .res-row .name { flex: 1 1 100%; order: 4; }
+    .res-row .exp-title { width: auto; flex: 1 1 100%; order: 1; white-space: normal; }
+    .res-row .name { flex: 1 1 100%; order: 3; }
+    .res-row .count { order: 2; }
 
     /* ユーザー一覧 */
     .user-row {
@@ -542,7 +618,14 @@
   }
   .slot-row .date { font-weight: 700; width: 92px; flex-shrink: 0; }
   .slot-row .time { color: #555; width: 110px; flex-shrink: 0; }
-  .slot-row .exp-title { flex: 1; color: #333; }
+  .slot-row .exp-title {
+    flex: 1;
+    color: #333;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .slot-row .cap {
     font-size: 11px;
     font-weight: 700;
@@ -709,8 +792,25 @@
         <h2>予約一覧</h2>
       </div>
       <p class="panel-note" id="reservations-note"></p>
-      <div class="res-list" id="res-list">
-        <div class="empty">読み込み中...</div>
+
+      <div class="res-toolbar">
+        <select id="res-filter-exp"><option value="">すべての体験</option></select>
+      </div>
+
+      <div class="res-cal-wrap">
+        <div class="cal-header">
+          <button class="cal-nav" type="button" onclick="resCalShiftMonth(-1)">‹</button>
+          <span id="res-cal-month-label"></span>
+          <button class="cal-nav" type="button" onclick="resCalShiftMonth(1)">›</button>
+        </div>
+        <div class="cal-weekdays">
+          <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+        </div>
+        <div class="cal-grid res-cal-grid" id="res-cal-grid"></div>
+      </div>
+
+      <div class="res-day-detail" id="res-day-detail">
+        <div class="empty">カレンダーの日付をタップすると、その日の予約が表示されます</div>
       </div>
     </div>
 
@@ -1480,33 +1580,128 @@
     }
   }
 
-  // ---------------- 予約一覧 ----------------
+  // ---------------- 予約一覧（カレンダー） ----------------
+  let resCalViewYear, resCalViewMonth
+  let allReservationsCache = []   // 現在のユーザー権限で取得できる全予約
+  let resSelectedDate = null
+
   async function loadReservations() {
-    const el = document.getElementById('res-list')
     const noteEl = document.getElementById('reservations-note')
     noteEl.textContent = currentUser.権限 === 'admin'
       ? 'すべての予約を表示しています'
       : '自分が担当する体験の予約のみ表示しています'
-    el.innerHTML = '<div class="empty">読み込み中...</div>'
+
+    const now = new Date()
+    resCalViewYear = now.getFullYear()
+    resCalViewMonth = now.getMonth()
+    resSelectedDate = null
+
     try {
       const isAdmin = currentUser.権限 === 'admin'
-      const reservations = await adminGetReservations(currentUser.id, isAdmin)
-      if (reservations.length === 0) {
-        el.innerHTML = '<div class="empty">予約はまだありません</div>'
-        return
-      }
-      el.innerHTML = reservations.map(r => `
+      allReservationsCache = await adminGetReservations(currentUser.id, isAdmin)
+      fillResFilterSelect()
+      renderResCalendar()
+      renderResDayDetail()
+    } catch (err) {
+      document.getElementById('res-day-detail').innerHTML =
+        `<div class="empty">読み込みに失敗しました：${err.message}</div>`
+    }
+  }
+
+  function fillResFilterSelect() {
+    const select = document.getElementById('res-filter-exp')
+    const seen = new Map()
+    for (const r of allReservationsCache) {
+      if (r.タイトル && !seen.has(r.タイトル)) seen.set(r.タイトル, true)
+    }
+    const options = Array.from(seen.keys())
+      .map(title => `<option value="${title}">${title}</option>`)
+      .join('')
+    select.innerHTML = '<option value="">すべての体験</option>' + options
+    select.onchange = () => {
+      renderResCalendar()
+      renderResDayDetail()
+    }
+  }
+
+  function getFilteredReservations() {
+    const filterExp = document.getElementById('res-filter-exp').value
+    if (!filterExp) return allReservationsCache
+    return allReservationsCache.filter(r => r.タイトル === filterExp)
+  }
+
+  function resPad2(n) { return String(n).padStart(2, '0') }
+  function resToDateStr(y, m, d) { return `${y}-${resPad2(m + 1)}-${resPad2(d)}` }
+
+  window.resCalShiftMonth = (diff) => {
+    resCalViewMonth += diff
+    if (resCalViewMonth < 0) { resCalViewMonth = 11; resCalViewYear-- }
+    if (resCalViewMonth > 11) { resCalViewMonth = 0; resCalViewYear++ }
+    resSelectedDate = null
+    renderResCalendar()
+    renderResDayDetail()
+  }
+
+  function renderResCalendar() {
+    document.getElementById('res-cal-month-label').textContent = `${resCalViewYear}年 ${resCalViewMonth + 1}月`
+    const grid = document.getElementById('res-cal-grid')
+    const firstDay = new Date(resCalViewYear, resCalViewMonth, 1).getDay()
+    const daysInMonth = new Date(resCalViewYear, resCalViewMonth + 1, 0).getDate()
+
+    const filtered = getFilteredReservations()
+    const countByDate = {}
+    for (const r of filtered) {
+      if (!r.日付) continue
+      countByDate[r.日付] = (countByDate[r.日付] || 0) + 1
+    }
+
+    let html = ''
+    for (let i = 0; i < firstDay; i++) html += `<div class="cal-day"></div>`
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = resToDateStr(resCalViewYear, resCalViewMonth, d)
+      const count = countByDate[dateStr] || 0
+      const hasRes = count > 0
+      const isSelected = dateStr === resSelectedDate
+      const cls = ['cal-day']
+      if (hasRes) cls.push('has-res')
+      if (isSelected) cls.push('selected')
+      html += `<div class="${cls.join(' ')}" ${hasRes ? `onclick="selectResDate('${dateStr}')"` : ''}>
+        <span>${d}</span>
+        ${hasRes ? `<span class="res-count">${count}件</span>` : ''}
+      </div>`
+    }
+    grid.innerHTML = html
+  }
+
+  window.selectResDate = (dateStr) => {
+    resSelectedDate = dateStr
+    renderResCalendar()
+    renderResDayDetail()
+  }
+
+  function renderResDayDetail() {
+    const el = document.getElementById('res-day-detail')
+    if (!resSelectedDate) {
+      el.innerHTML = '<div class="empty">カレンダーの日付をタップすると、その日の予約が表示されます</div>'
+      return
+    }
+    const filtered = getFilteredReservations().filter(r => r.日付 === resSelectedDate)
+    if (filtered.length === 0) {
+      el.innerHTML = '<div class="empty">この日の予約はありません</div>'
+      return
+    }
+    const sorted = [...filtered].sort((a, b) => (a.時間 ?? '').localeCompare(b.時間 ?? ''))
+    el.innerHTML = `
+      <div class="day-label">${formatDate(resSelectedDate)}の予約（${sorted.length}件）</div>
+      ${sorted.map(r => `
         <div class="res-row">
-          <div class="date">${formatDate(r.日付)}</div>
           <div class="time">${(r.時間 ?? '').slice(0,5)}</div>
           <div class="exp-title">${r.タイトル ?? '(削除済み体験)'}</div>
           <div class="name">${r.氏名 ?? ''}${r.予約内容 ? '・' + r.予約内容 : ''}</div>
           <div class="count">${r.人数 ?? 1}名</div>
         </div>
-      `).join('')
-    } catch (err) {
-      el.innerHTML = `<div class="empty">読み込みに失敗しました：${err.message}</div>`
-    }
+      `).join('')}
+    `
   }
 
   // ---------------- ユーザー管理（管理者のみ） ----------------
