@@ -77,6 +77,8 @@
     position: sticky;
     top: 0;
     z-index: 50;
+    flex-wrap: wrap;
+    gap: 10px;
   }
   .topbar h1 {
     font-size: 15px;
@@ -84,9 +86,25 @@
     color: #3d6b4f;
     letter-spacing: 0.06em;
   }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #555;
+    padding-left: 12px;
+    border-left: 1.5px solid #e0dace;
+  }
   .tabs {
     display: flex;
     gap: 6px;
+    flex-wrap: wrap;
   }
   .tab-btn {
     padding: 7px 16px;
@@ -297,6 +315,86 @@
   }
   .upload-status.error { color: #c0392b; }
 
+  /* ---------- 予約一覧 ---------- */
+  .panel-note {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 12px;
+  }
+  .res-list { display: flex; flex-direction: column; gap: 8px; }
+  .res-row {
+    background: #fff;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .res-row .date { font-weight: 700; width: 90px; flex-shrink: 0; }
+  .res-row .time { color: #555; width: 60px; flex-shrink: 0; }
+  .res-row .exp-title { width: 200px; color: #333; flex-shrink: 0; }
+  .res-row .name { flex: 1; min-width: 100px; color: #444; }
+  .res-row .count {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: #f0ebe4;
+    color: #3d6b4f;
+  }
+
+  /* ---------- ユーザー管理 ---------- */
+  .user-list { display: flex; flex-direction: column; gap: 10px; }
+  .user-row {
+    background: #fff;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .user-row .info { flex: 1; }
+  .user-row .info .name { font-size: 14px; font-weight: 700; }
+  .user-row .info .meta { font-size: 11px; color: #888; margin-top: 2px; }
+  .role-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+  }
+  .role-badge.admin { background: #f5e3e0; color: #c0392b; }
+  .role-badge.staff { background: #e3efe6; color: #3d6b4f; }
+
+  /* ---------- 担当者リスト（モーダル内） ---------- */
+  .staff-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .staff-list .empty { padding: 14px; font-size: 12px; }
+  .staff-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f5f2ec;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .staff-chip button {
+    background: none;
+    border: none;
+    color: #c0392b;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
   /* ---------- 予約枠タブ ---------- */
   .slot-toolbar {
     display: flex;
@@ -431,13 +529,14 @@
 </head>
 <body>
 
-  <!-- パスワードゲート -->
+  <!-- ログイン画面 -->
   <div id="gate">
     <div class="gate-box">
       <h1>ARIFUKU PASS</h1>
-      <p>管理画面 — パスワードを入力してください</p>
-      <input type="password" id="gate-pw" placeholder="パスワード">
-      <button onclick="checkPassword()">入る</button>
+      <p>管理画面 — ログインしてください</p>
+      <input type="text" id="gate-username" placeholder="ユーザー名" autocomplete="username">
+      <input type="password" id="gate-pw" placeholder="パスワード" autocomplete="current-password">
+      <button onclick="checkPassword()">ログイン</button>
       <div class="gate-error" id="gate-error"></div>
     </div>
   </div>
@@ -446,9 +545,17 @@
   <div id="app">
     <div class="topbar">
       <h1>ARIFUKU PASS 管理画面</h1>
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="experiences">体験内容</button>
-        <button class="tab-btn" data-tab="slots">予約枠</button>
+      <div class="topbar-right">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="experiences">体験内容</button>
+          <button class="tab-btn" data-tab="slots">予約枠</button>
+          <button class="tab-btn" data-tab="reservations">予約一覧</button>
+          <button class="tab-btn" id="tab-users-btn" data-tab="users" style="display:none;">ユーザー管理</button>
+        </div>
+        <div class="user-info">
+          <span id="current-user-label"></span>
+          <button class="btn btn-outline btn-small" onclick="logout()">ログアウト</button>
+        </div>
       </div>
     </div>
 
@@ -456,7 +563,7 @@
     <div class="panel active" id="panel-experiences">
       <div class="panel-head">
         <h2>体験内容一覧</h2>
-        <button class="btn btn-primary" onclick="openExpForm()">＋ 新規追加</button>
+        <button class="btn btn-primary" id="exp-new-btn" onclick="openExpForm()">＋ 新規追加</button>
       </div>
       <div class="exp-list" id="exp-list">
         <div class="empty">読み込み中...</div>
@@ -474,6 +581,28 @@
         <select id="slot-filter-exp"><option value="">すべての体験</option></select>
       </div>
       <div class="slot-list" id="slot-list">
+        <div class="empty">読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- 予約一覧パネル -->
+    <div class="panel" id="panel-reservations">
+      <div class="panel-head">
+        <h2>予約一覧</h2>
+      </div>
+      <p class="panel-note" id="reservations-note"></p>
+      <div class="res-list" id="res-list">
+        <div class="empty">読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- ユーザー管理パネル（管理者のみ） -->
+    <div class="panel" id="panel-users">
+      <div class="panel-head">
+        <h2>ユーザー管理</h2>
+        <button class="btn btn-primary" onclick="openUserForm()">＋ ユーザーを追加</button>
+      </div>
+      <div class="user-list" id="user-list">
         <div class="empty">読み込み中...</div>
       </div>
     </div>
@@ -577,34 +706,124 @@
     </div>
   </div>
 
+  <!-- 担当者アサインモーダル -->
+  <div class="modal-bg" id="staff-modal-bg">
+    <div class="modal">
+      <h3 id="staff-modal-title">担当者を管理</h3>
+      <input type="hidden" id="staff-exp-id">
+      <div class="staff-list" id="staff-current-list"></div>
+      <div class="field">
+        <label>担当者を追加</label>
+        <select id="staff-add-select"></select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeStaffForm()">閉じる</button>
+        <button class="btn btn-primary" onclick="addStaff()">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ユーザー作成モーダル -->
+  <div class="modal-bg" id="user-modal-bg">
+    <div class="modal">
+      <h3>ユーザーを追加</h3>
+      <div class="field"><label>ユーザー名 *</label><input id="user-username"></div>
+      <div class="field"><label>パスワード *</label><input id="user-password" type="text"></div>
+      <div class="field">
+        <label>権限 *</label>
+        <select id="user-role">
+          <option value="staff">スタッフ</option>
+          <option value="admin">管理者</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeUserForm()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveUser()">作成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- パスワード再設定モーダル -->
+  <div class="modal-bg" id="reset-pw-modal-bg">
+    <div class="modal">
+      <h3>パスワードを再設定</h3>
+      <input type="hidden" id="reset-pw-user-id">
+      <div class="field"><label>ユーザー名</label><div class="static-text" id="reset-pw-username"></div></div>
+      <div class="field"><label>新しいパスワード *</label><input id="reset-pw-new" type="text"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeResetPwForm()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveResetPassword()">変更</button>
+      </div>
+    </div>
+  </div>
+
 <script type="module">
   import {
     adminGetExperiences, adminInsertExperience, adminUpdateExperience,
     adminToggleExperienceVisibility, adminDeleteExperience,
     adminInsertSlot, adminGetSlots, adminUpdateSlot, adminDeleteSlot,
-    uploadExperienceImage
+    uploadExperienceImage,
+    adminLogin, adminCreateUser, adminGetUsers, adminDeleteUser, adminResetPassword,
+    adminAssignStaff, adminUnassignStaff, adminGetStaffForExperience,
+    adminGetMyExperiences, adminGetReservations
   } from './api.js'
 
-  // ⚠️ 簡易パスワードゲート（ABEE方式と同じ運用）
-  const ADMIN_PASSWORD = 'ARIFUKU2026'
+  // ---------------- ログイン ----------------
+  let currentUser = null  // { id, ユーザー名, 権限 }
 
-  window.checkPassword = function () {
-    const input = document.getElementById('gate-pw').value
-    if (input === ADMIN_PASSWORD) {
-      document.getElementById('gate').style.display = 'none'
-      document.getElementById('app').style.display = 'block'
-      sessionStorage.setItem('arifuku_admin_ok', '1')
-      initApp()
-    } else {
-      document.getElementById('gate-error').textContent = 'パスワードが違います'
+  window.checkPassword = async function () {
+    const username = document.getElementById('gate-username').value.trim()
+    const password = document.getElementById('gate-pw').value
+    const errorEl = document.getElementById('gate-error')
+    errorEl.textContent = ''
+
+    if (!username || !password) {
+      errorEl.textContent = 'ユーザー名とパスワードを入力してください'
+      return
+    }
+
+    try {
+      const user = await adminLogin(username, password)
+      if (!user) {
+        errorEl.textContent = 'ユーザー名またはパスワードが違います'
+        return
+      }
+      currentUser = user
+      sessionStorage.setItem('arifuku_admin_user', JSON.stringify(user))
+      enterApp()
+    } catch (err) {
+      errorEl.textContent = 'ログインに失敗しました：' + err.message
     }
   }
 
-  // セッション内なら自動通過
-  if (sessionStorage.getItem('arifuku_admin_ok') === '1') {
+  window.logout = function () {
+    sessionStorage.removeItem('arifuku_admin_user')
+    currentUser = null
+    document.getElementById('gate').style.display = 'flex'
+    document.getElementById('app').style.display = 'none'
+    document.getElementById('gate-username').value = ''
+    document.getElementById('gate-pw').value = ''
+  }
+
+  function enterApp() {
     document.getElementById('gate').style.display = 'none'
     document.getElementById('app').style.display = 'block'
+    document.getElementById('current-user-label').textContent =
+      `${currentUser.ユーザー名}（${currentUser.権限 === 'admin' ? '管理者' : 'スタッフ'}）`
+    document.getElementById('tab-users-btn').style.display =
+      currentUser.権限 === 'admin' ? 'inline-block' : 'none'
+    document.getElementById('exp-new-btn').style.display =
+      currentUser.権限 === 'admin' ? 'inline-block' : 'none'
     initApp()
+  }
+
+  // セッション内なら自動ログイン
+  const savedUser = sessionStorage.getItem('arifuku_admin_user')
+  if (savedUser) {
+    try {
+      currentUser = JSON.parse(savedUser)
+      enterApp()
+    } catch (e) { /* ignore */ }
   }
 
   // ---------------- タブ切り替え ----------------
@@ -615,10 +834,13 @@
       btn.classList.add('active')
       document.getElementById('panel-' + btn.dataset.tab).classList.add('active')
       if (btn.dataset.tab === 'slots') loadSlots()
+      if (btn.dataset.tab === 'reservations') loadReservations()
+      if (btn.dataset.tab === 'users') loadUsers()
     })
   })
 
   let experiencesCache = []
+  let allUsersCache = []  // 担当者選択用に全ユーザーをキャッシュ
 
   function initApp() {
     loadExperiences()
@@ -634,7 +856,11 @@
     const el = document.getElementById('exp-list')
     el.innerHTML = '<div class="empty">読み込み中...</div>'
     try {
-      experiencesCache = await adminGetExperiences()
+      if (currentUser.権限 === 'admin') {
+        experiencesCache = await adminGetExperiences()
+      } else {
+        experiencesCache = await adminGetMyExperiences(currentUser.id)
+      }
       renderExperiences()
       fillExpSelects()
     } catch (err) {
@@ -663,8 +889,9 @@
         </div>
         <div class="actions">
           <button class="toggle-switch ${e.公開 ? 'on' : ''}" onclick="toggleVisibility('${e.id}', ${!e.公開})" title="公開切替"></button>
+          ${currentUser.権限 === 'admin' ? `<button class="btn btn-outline btn-small" onclick="openStaffForm('${e.id}')">担当者</button>` : ''}
           <button class="btn btn-outline btn-small" onclick="openExpForm('${e.id}')">編集</button>
-          <button class="btn btn-danger btn-small" onclick="deleteExperience('${e.id}')">削除</button>
+          ${currentUser.権限 === 'admin' ? `<button class="btn btn-danger btn-small" onclick="deleteExperience('${e.id}')">削除</button>` : ''}
         </div>
       </div>
     `).join('')
@@ -1049,6 +1276,205 @@
 
     closeSlotForm()
     loadSlots()
+  }
+
+  // ---------------- 担当者管理 ----------------
+  window.openStaffForm = async (experienceId) => {
+    const exp = experiencesCache.find(x => x.id === experienceId)
+    document.getElementById('staff-exp-id').value = experienceId
+    document.getElementById('staff-modal-title').textContent = `担当者を管理：${exp?.タイトル ?? ''}`
+    document.getElementById('staff-modal-bg').classList.add('show')
+    await refreshStaffList(experienceId)
+
+    if (allUsersCache.length === 0) {
+      try {
+        allUsersCache = await adminGetUsers()
+      } catch (err) {
+        console.error(err)
+      }
+    }
+  }
+
+  async function refreshStaffList(experienceId) {
+    const listEl = document.getElementById('staff-current-list')
+    const selectEl = document.getElementById('staff-add-select')
+    listEl.innerHTML = '<div class="empty">読み込み中...</div>'
+    try {
+      const staff = await adminGetStaffForExperience(experienceId)
+      if (staff.length === 0) {
+        listEl.innerHTML = '<div class="empty">担当者はまだいません</div>'
+      } else {
+        listEl.innerHTML = staff.map(s => `
+          <div class="staff-chip">
+            <span>${s.ユーザー名}</span>
+            <button onclick="removeStaff('${experienceId}', '${s.user_id}')">解除</button>
+          </div>
+        `).join('')
+      }
+
+      if (allUsersCache.length === 0) {
+        allUsersCache = await adminGetUsers()
+      }
+      const assignedIds = new Set(staff.map(s => s.user_id))
+      const options = allUsersCache
+        .filter(u => !assignedIds.has(u.id))
+        .map(u => `<option value="${u.id}">${u.ユーザー名}（${u.権限 === 'admin' ? '管理者' : 'スタッフ'}）</option>`)
+        .join('')
+      selectEl.innerHTML = options || '<option value="">追加できるユーザーがいません</option>'
+    } catch (err) {
+      listEl.innerHTML = `<div class="empty">読み込みに失敗しました：${err.message}</div>`
+    }
+  }
+
+  window.closeStaffForm = () => {
+    document.getElementById('staff-modal-bg').classList.remove('show')
+    loadExperiences()
+  }
+
+  window.addStaff = async () => {
+    const experienceId = document.getElementById('staff-exp-id').value
+    const userId = document.getElementById('staff-add-select').value
+    if (!userId) { alert('追加するユーザーを選んでください'); return }
+    try {
+      await adminAssignStaff(experienceId, userId)
+      await refreshStaffList(experienceId)
+    } catch (err) {
+      alert('追加に失敗しました：' + err.message)
+    }
+  }
+
+  window.removeStaff = async (experienceId, userId) => {
+    if (!confirm('この担当者を解除しますか？')) return
+    try {
+      await adminUnassignStaff(experienceId, userId)
+      await refreshStaffList(experienceId)
+    } catch (err) {
+      alert('解除に失敗しました：' + err.message)
+    }
+  }
+
+  // ---------------- 予約一覧 ----------------
+  async function loadReservations() {
+    const el = document.getElementById('res-list')
+    const noteEl = document.getElementById('reservations-note')
+    noteEl.textContent = currentUser.権限 === 'admin'
+      ? 'すべての予約を表示しています'
+      : '自分が担当する体験の予約のみ表示しています'
+    el.innerHTML = '<div class="empty">読み込み中...</div>'
+    try {
+      const isAdmin = currentUser.権限 === 'admin'
+      const reservations = await adminGetReservations(currentUser.id, isAdmin)
+      if (reservations.length === 0) {
+        el.innerHTML = '<div class="empty">予約はまだありません</div>'
+        return
+      }
+      el.innerHTML = reservations.map(r => `
+        <div class="res-row">
+          <div class="date">${formatDate(r.日付)}</div>
+          <div class="time">${(r.時間 ?? '').slice(0,5)}</div>
+          <div class="exp-title">${r.タイトル ?? '(削除済み体験)'}</div>
+          <div class="name">${r.氏名 ?? ''}${r.予約内容 ? '・' + r.予約内容 : ''}</div>
+          <div class="count">${r.人数 ?? 1}名</div>
+        </div>
+      `).join('')
+    } catch (err) {
+      el.innerHTML = `<div class="empty">読み込みに失敗しました：${err.message}</div>`
+    }
+  }
+
+  // ---------------- ユーザー管理（管理者のみ） ----------------
+  async function loadUsers() {
+    const el = document.getElementById('user-list')
+    el.innerHTML = '<div class="empty">読み込み中...</div>'
+    try {
+      allUsersCache = await adminGetUsers()
+      if (allUsersCache.length === 0) {
+        el.innerHTML = '<div class="empty">ユーザーがまだいません</div>'
+        return
+      }
+      el.innerHTML = allUsersCache.map(u => `
+        <div class="user-row">
+          <div class="info">
+            <div class="name">${u.ユーザー名}<span class="role-badge ${u.権限}">${u.権限 === 'admin' ? '管理者' : 'スタッフ'}</span></div>
+            <div class="meta">作成日：${formatDate(u.作成日?.slice(0,10))}</div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-outline btn-small" onclick="openResetPwForm('${u.id}', '${u.ユーザー名}')">パスワード変更</button>
+            <button class="btn btn-danger btn-small" onclick="deleteUser('${u.id}')">削除</button>
+          </div>
+        </div>
+      `).join('')
+    } catch (err) {
+      el.innerHTML = `<div class="empty">読み込みに失敗しました：${err.message}</div>`
+    }
+  }
+
+  window.openUserForm = () => {
+    document.getElementById('user-username').value = ''
+    document.getElementById('user-password').value = ''
+    document.getElementById('user-role').value = 'staff'
+    document.getElementById('user-modal-bg').classList.add('show')
+  }
+
+  window.closeUserForm = () => {
+    document.getElementById('user-modal-bg').classList.remove('show')
+  }
+
+  window.saveUser = async () => {
+    const username = document.getElementById('user-username').value.trim()
+    const password = document.getElementById('user-password').value
+    const role = document.getElementById('user-role').value
+
+    if (!username || !password) {
+      alert('ユーザー名とパスワードは必須です')
+      return
+    }
+
+    try {
+      await adminCreateUser(username, password, role)
+      closeUserForm()
+      loadUsers()
+    } catch (err) {
+      alert('作成に失敗しました：' + err.message)
+    }
+  }
+
+  window.deleteUser = async (id) => {
+    if (id === currentUser.id) {
+      alert('自分自身は削除できません')
+      return
+    }
+    if (!confirm('このユーザーを削除しますか？')) return
+    try {
+      await adminDeleteUser(id)
+      loadUsers()
+    } catch (err) {
+      alert('削除に失敗しました：' + err.message)
+    }
+  }
+
+  window.openResetPwForm = (id, username) => {
+    document.getElementById('reset-pw-user-id').value = id
+    document.getElementById('reset-pw-username').textContent = username
+    document.getElementById('reset-pw-new').value = ''
+    document.getElementById('reset-pw-modal-bg').classList.add('show')
+  }
+
+  window.closeResetPwForm = () => {
+    document.getElementById('reset-pw-modal-bg').classList.remove('show')
+  }
+
+  window.saveResetPassword = async () => {
+    const id = document.getElementById('reset-pw-user-id').value
+    const newPassword = document.getElementById('reset-pw-new').value
+    if (!newPassword) { alert('新しいパスワードを入力してください'); return }
+    try {
+      await adminResetPassword(id, newPassword)
+      closeResetPwForm()
+      alert('パスワードを変更しました')
+    } catch (err) {
+      alert('変更に失敗しました：' + err.message)
+    }
   }
 </script>
 

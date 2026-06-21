@@ -158,6 +158,140 @@ export async function uploadExperienceImage(file) {
 }
 
 // -----------------------------------------------
+// 管理ユーザー（ログイン・権限）
+// -----------------------------------------------
+
+/**
+ * ログイン認証
+ * @param {string} username
+ * @param {string} password
+ * @returns {Promise<Object|null>} { id, ユーザー名, 権限 } or null
+ */
+export async function adminLogin(username, password) {
+  const { data, error } = await supabase.rpc('admin_login', {
+    p_username: username,
+    p_password: password
+  })
+  if (error) throw error
+  return data?.[0] ?? null
+}
+
+/**
+ * 管理ユーザーを新規作成
+ * @param {string} username
+ * @param {string} password
+ * @param {string} role - 'admin' or 'staff'
+ */
+export async function adminCreateUser(username, password, role) {
+  const { data, error } = await supabase.rpc('admin_create_user', {
+    p_username: username,
+    p_password: password,
+    p_role: role
+  })
+  if (error) throw error
+  return data
+}
+
+/**
+ * 管理ユーザー一覧を取得
+ * @returns {Promise<Array>}
+ */
+export async function adminGetUsers() {
+  const { data, error } = await supabase.rpc('admin_get_users')
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * 管理ユーザーを削除
+ * @param {string} id
+ */
+export async function adminDeleteUser(id) {
+  const { error } = await supabase.rpc('admin_delete_user', { p_id: id })
+  if (error) throw error
+}
+
+/**
+ * パスワードを再設定
+ * @param {string} id
+ * @param {string} newPassword
+ */
+export async function adminResetPassword(id, newPassword) {
+  const { error } = await supabase.rpc('admin_reset_password', {
+    p_id: id,
+    p_new_password: newPassword
+  })
+  if (error) throw error
+}
+
+/**
+ * 体験に担当者をアサイン
+ * @param {string} experienceId
+ * @param {string} userId
+ */
+export async function adminAssignStaff(experienceId, userId) {
+  const { error } = await supabase.rpc('admin_assign_staff', {
+    p_experience_id: experienceId,
+    p_user_id: userId
+  })
+  if (error) throw error
+}
+
+/**
+ * 体験の担当者を解除
+ * @param {string} experienceId
+ * @param {string} userId
+ */
+export async function adminUnassignStaff(experienceId, userId) {
+  const { error } = await supabase.rpc('admin_unassign_staff', {
+    p_experience_id: experienceId,
+    p_user_id: userId
+  })
+  if (error) throw error
+}
+
+/**
+ * 指定体験の担当者一覧を取得
+ * @param {string} experienceId
+ * @returns {Promise<Array>}
+ */
+export async function adminGetStaffForExperience(experienceId) {
+  const { data, error } = await supabase.rpc('admin_get_staff_for_experience', {
+    p_experience_id: experienceId
+  })
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * 指定スタッフが担当している体験一覧を取得
+ * @param {string} userId
+ * @returns {Promise<Array>}
+ */
+export async function adminGetMyExperiences(userId) {
+  const { data, error } = await supabase.rpc('admin_get_my_experiences', {
+    p_user_id: userId
+  })
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * 予約情報一覧を取得（管理者は全件／スタッフは自分の担当体験のみ）
+ * @param {string} userId
+ * @param {boolean} isAdmin
+ * @returns {Promise<Array>}
+ */
+export async function adminGetReservations(userId, isAdmin) {
+  const { data, error } = await supabase.rpc('admin_get_reservations', {
+    p_user_id: userId,
+    p_is_admin: isAdmin
+  })
+  if (error) throw error
+  return data ?? []
+}
+
+// -----------------------------------------------
 // 管理画面用
 // -----------------------------------------------
 
