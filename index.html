@@ -398,6 +398,12 @@
         console.error(err)
         document.getElementById('card-list').innerHTML =
           `<div class="error-msg">読み込みに失敗しました<br><small>${err.message}</small></div>`
+        // デバッグ用：画面下にエラー詳細を表示
+        document.body.insertAdjacentHTML('beforeend', `
+          <div style="position:fixed;bottom:0;left:0;right:0;background:#c0392b;color:#fff;padding:16px;font-size:12px;z-index:9999;word-break:break-all;max-height:40vh;overflow:auto;">
+            ❌ ${err.message}<br>${err.stack ?? ''}
+          </div>
+        `)
       }
     }
 
