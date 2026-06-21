@@ -284,6 +284,89 @@
     color: #a08878;
     font-size: 13px;
   }
+
+  /* ---------- カレンダー（予約枠選択） ---------- */
+  .modal-wide { max-width: 380px; }
+
+  .cal-wrap {
+    margin-bottom: 14px;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 10px;
+    padding: 12px;
+    background: #faf8f5;
+  }
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #3d6b4f;
+  }
+  .cal-nav {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #3d6b4f;
+    cursor: pointer;
+    padding: 0 8px;
+    line-height: 1;
+  }
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 10px;
+    color: #999;
+    margin-bottom: 4px;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    background: #fff;
+    border: 1.5px solid transparent;
+    color: #333;
+    user-select: none;
+  }
+  .cal-day.empty-cell { cursor: default; background: transparent; }
+  .cal-day.past { color: #ccc; cursor: not-allowed; background: transparent; }
+  .cal-day.selected {
+    background: #3d6b4f;
+    color: #fff;
+    font-weight: 700;
+  }
+  .cal-day.today:not(.selected) {
+    border-color: #3d6b4f;
+    font-weight: 700;
+  }
+  .cal-selected-info {
+    margin-top: 10px;
+    font-size: 11px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .link-btn {
+    background: none;
+    border: none;
+    color: #c0392b;
+    font-size: 11px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
 </style>
 </head>
 <body>
@@ -365,13 +448,29 @@
 
   <!-- 予約枠フォームモーダル -->
   <div class="modal-bg" id="slot-modal-bg">
-    <div class="modal">
+    <div class="modal modal-wide">
       <h3>予約枠を追加</h3>
       <div class="field">
         <label>体験 *</label>
         <select id="slot-exp"></select>
       </div>
-      <div class="field"><label>日付 *</label><input id="slot-date" type="date"></div>
+
+      <div class="cal-wrap">
+        <div class="cal-header">
+          <button class="cal-nav" type="button" onclick="calShiftMonth(-1)">‹</button>
+          <span id="cal-month-label"></span>
+          <button class="cal-nav" type="button" onclick="calShiftMonth(1)">›</button>
+        </div>
+        <div class="cal-weekdays">
+          <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-selected-info">
+          選択中の日付：<span id="cal-selected-count">0</span>件
+          <button type="button" class="link-btn" onclick="calClearSelection()">クリア</button>
+        </div>
+      </div>
+
       <div class="field-row">
         <div class="field"><label>開始時刻 *</label><input id="slot-start" type="time"></div>
         <div class="field"><label>終了時刻</label><input id="slot-end" type="time"></div>
@@ -379,7 +478,7 @@
       <div class="field"><label>定員</label><input id="slot-capacity" type="number" value="1" min="1"></div>
       <div class="modal-actions">
         <button class="btn btn-outline" onclick="closeSlotForm()">キャンセル</button>
-        <button class="btn btn-primary" onclick="saveSlot()">追加</button>
+        <button class="btn btn-primary" onclick="saveSlot()">選択した日に一括登録</button>
       </div>
     </div>
   </div>
@@ -556,7 +655,63 @@
     }
   }
 
-  // ---------------- 予約枠 ----------------
+  // ---------------- 予約枠：カレンダー選択 ----------------
+  let calViewYear, calViewMonth   // 表示中の年・月（0-indexed month）
+  let selectedDates = new Set()   // 'YYYY-MM-DD' の集合
+
+  function pad2(n) { return String(n).padStart(2, '0') }
+  function toDateStr(y, m, d) { return `${y}-${pad2(m + 1)}-${pad2(d)}` }
+
+  function renderCalendar() {
+    const label = document.getElementById('cal-month-label')
+    label.textContent = `${calViewYear}年 ${calViewMonth + 1}月`
+
+    const grid = document.getElementById('cal-grid')
+    const firstDay = new Date(calViewYear, calViewMonth, 1).getDay()
+    const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate()
+
+    const todayStr = toDateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+
+    let html = ''
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div class="cal-day empty-cell"></div>`
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = toDateStr(calViewYear, calViewMonth, d)
+      const isPast = dateStr < todayStr
+      const isToday = dateStr === todayStr
+      const isSelected = selectedDates.has(dateStr)
+      const cls = ['cal-day']
+      if (isPast) cls.push('past')
+      if (isToday) cls.push('today')
+      if (isSelected) cls.push('selected')
+      html += `<div class="${cls.join(' ')}" ${isPast ? '' : `onclick="calToggleDate('${dateStr}')"`}>${d}</div>`
+    }
+    grid.innerHTML = html
+    document.getElementById('cal-selected-count').textContent = selectedDates.size
+  }
+
+  window.calShiftMonth = (diff) => {
+    calViewMonth += diff
+    if (calViewMonth < 0) { calViewMonth = 11; calViewYear-- }
+    if (calViewMonth > 11) { calViewMonth = 0; calViewYear++ }
+    renderCalendar()
+  }
+
+  window.calToggleDate = (dateStr) => {
+    if (selectedDates.has(dateStr)) {
+      selectedDates.delete(dateStr)
+    } else {
+      selectedDates.add(dateStr)
+    }
+    renderCalendar()
+  }
+
+  window.calClearSelection = () => {
+    selectedDates.clear()
+    renderCalendar()
+  }
+
   function fillExpSelects() {
     const opts = experiencesCache.map(e => `<option value="${e.id}">${e.タイトル}</option>`).join('')
     document.getElementById('slot-exp').innerHTML = opts
@@ -621,10 +776,16 @@
       alert('先に体験内容を登録してください')
       return
     }
-    document.getElementById('slot-date').value = ''
     document.getElementById('slot-start').value = ''
     document.getElementById('slot-end').value = ''
     document.getElementById('slot-capacity').value = 1
+    selectedDates.clear()
+
+    const now = new Date()
+    calViewYear = now.getFullYear()
+    calViewMonth = now.getMonth()
+    renderCalendar()
+
     document.getElementById('slot-modal-bg').classList.add('show')
   }
 
@@ -634,29 +795,49 @@
 
   window.saveSlot = async () => {
     const experienceId = document.getElementById('slot-exp').value
-    const date = document.getElementById('slot-date').value
     const start = document.getElementById('slot-start').value
     const end = document.getElementById('slot-end').value
     const capacity = parseInt(document.getElementById('slot-capacity').value) || 1
 
-    if (!experienceId || !date || !start) {
-      alert('体験・日付・開始時刻は必須です')
+    if (!experienceId || selectedDates.size === 0 || !start) {
+      alert('体験・日付（1つ以上）・開始時刻は必須です')
       return
     }
 
-    try {
-      await adminInsertSlot({
-        experienceId,
-        date,
-        startTime: start + ':00',
-        endTime: end ? end + ':00' : null,
-        capacity
-      })
-      closeSlotForm()
-      loadSlots()
-    } catch (err) {
-      alert('追加に失敗しました：' + err.message)
+    const dates = Array.from(selectedDates)
+    const saveBtn = document.querySelector('#slot-modal-bg .btn-primary')
+    saveBtn.disabled = true
+    saveBtn.textContent = `登録中... (0/${dates.length})`
+
+    let successCount = 0
+    let failCount = 0
+
+    for (const date of dates) {
+      try {
+        await adminInsertSlot({
+          experienceId,
+          date,
+          startTime: start + ':00',
+          endTime: end ? end + ':00' : null,
+          capacity
+        })
+        successCount++
+      } catch (err) {
+        failCount++
+        console.error(`${date} の登録に失敗:`, err)
+      }
+      saveBtn.textContent = `登録中... (${successCount + failCount}/${dates.length})`
     }
+
+    saveBtn.disabled = false
+    saveBtn.textContent = '選択した日に一括登録'
+
+    if (failCount > 0) {
+      alert(`${successCount}件登録しました（${failCount}件失敗）`)
+    }
+
+    closeSlotForm()
+    loadSlots()
   }
 </script>
 
