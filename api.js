@@ -244,6 +244,26 @@ export async function adminGetSlots(yearMonth) {
 }
 
 /**
+ * 予約枠を更新
+ * @param {string} id
+ * @param {Object} params
+ * @param {string} params.date      - 'YYYY-MM-DD'
+ * @param {string} params.startTime - 'HH:mm:ss'
+ * @param {string} params.endTime   - 'HH:mm:ss'
+ * @param {number} params.capacity
+ */
+export async function adminUpdateSlot(id, params) {
+  const { error } = await supabase.rpc('admin_update_slot', {
+    p_id:          id,
+    p_date:        params.date,
+    p_start_time:  params.startTime,
+    p_end_time:    params.endTime,
+    p_capacity:    params.capacity
+  })
+  if (error) throw error
+}
+
+/**
  * 予約枠を削除
  * @param {string} id
  */

@@ -227,6 +227,11 @@
     font-size: 13px;
     font-family: inherit;
   }
+  .field .static-text {
+    font-size: 13px;
+    color: #444;
+    padding: 8px 0 2px;
+  }
   .field textarea { resize: vertical; min-height: 60px; }
   .field-row { display: flex; gap: 10px; }
   .field-row .field { flex: 1; }
@@ -483,11 +488,30 @@
     </div>
   </div>
 
+  <!-- 予約枠編集モーダル -->
+  <div class="modal-bg" id="slot-edit-modal-bg">
+    <div class="modal">
+      <h3>予約枠を編集</h3>
+      <input type="hidden" id="slot-edit-id">
+      <div class="field"><label>体験</label><div class="static-text" id="slot-edit-exp-title"></div></div>
+      <div class="field"><label>日付 *</label><input id="slot-edit-date" type="date"></div>
+      <div class="field-row">
+        <div class="field"><label>開始時刻 *</label><input id="slot-edit-start" type="time"></div>
+        <div class="field"><label>終了時刻</label><input id="slot-edit-end" type="time"></div>
+      </div>
+      <div class="field"><label>定員</label><input id="slot-edit-capacity" type="number" min="1"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeSlotEditForm()">キャンセル</button>
+        <button class="btn btn-primary" onclick="updateSlot()">保存</button>
+      </div>
+    </div>
+  </div>
+
 <script type="module">
   import {
     adminGetExperiences, adminInsertExperience, adminUpdateExperience,
     adminToggleExperienceVisibility, adminDeleteExperience,
-    adminInsertSlot, adminGetSlots, adminDeleteSlot
+    adminInsertSlot, adminGetSlots, adminUpdateSlot, adminDeleteSlot
   } from './api.js'
 
   // ⚠️ 簡易パスワードゲート（ABEE方式と同じ運用）
@@ -658,6 +682,7 @@
   // ---------------- 予約枠：カレンダー選択 ----------------
   let calViewYear, calViewMonth   // 表示中の年・月（0-indexed month）
   let selectedDates = new Set()   // 'YYYY-MM-DD' の集合
+  let slotsCache = []             // 現在表示中の予約枠一覧（編集用）
 
   function pad2(n) { return String(n).padStart(2, '0') }
   function toDateStr(y, m, d) { return `${y}-${pad2(m + 1)}-${pad2(d)}` }
@@ -735,6 +760,7 @@
   }
 
   function renderSlots(slots) {
+    slotsCache = slots
     const el = document.getElementById('slot-list')
     if (!slots || slots.length === 0) {
       el.innerHTML = '<div class="empty">この月の予約枠はまだありません</div>'
@@ -748,6 +774,7 @@
           <div class="time">${(s.開始時刻 ?? '').slice(0,5)}${s.終了時刻 ? '〜' + s.終了時刻.slice(0,5) : ''}</div>
           <div class="exp-title">${s.タイトル ?? '(削除済み体験)'}</div>
           <div class="cap ${isFull ? 'full' : ''}">${s.予約数}/${s.定員}</div>
+          <button class="btn btn-outline btn-small" onclick="openSlotEditForm('${s.slot_id}')">編集</button>
           <button class="btn btn-danger btn-small" onclick="deleteSlot('${s.slot_id}')">削除</button>
         </div>
       `
@@ -768,6 +795,48 @@
       loadSlots()
     } catch (err) {
       alert('削除に失敗しました：' + err.message)
+    }
+  }
+
+  window.openSlotEditForm = (id) => {
+    const s = slotsCache.find(x => x.slot_id === id)
+    if (!s) return
+    document.getElementById('slot-edit-id').value = s.slot_id
+    document.getElementById('slot-edit-exp-title').textContent = s.タイトル ?? '(削除済み体験)'
+    document.getElementById('slot-edit-date').value = s.日付
+    document.getElementById('slot-edit-start').value = (s.開始時刻 ?? '').slice(0,5)
+    document.getElementById('slot-edit-end').value = s.終了時刻 ? s.終了時刻.slice(0,5) : ''
+    document.getElementById('slot-edit-capacity').value = s.定員
+    document.getElementById('slot-edit-modal-bg').classList.add('show')
+  }
+
+  window.closeSlotEditForm = () => {
+    document.getElementById('slot-edit-modal-bg').classList.remove('show')
+  }
+
+  window.updateSlot = async () => {
+    const id = document.getElementById('slot-edit-id').value
+    const date = document.getElementById('slot-edit-date').value
+    const start = document.getElementById('slot-edit-start').value
+    const end = document.getElementById('slot-edit-end').value
+    const capacity = parseInt(document.getElementById('slot-edit-capacity').value) || 1
+
+    if (!date || !start) {
+      alert('日付・開始時刻は必須です')
+      return
+    }
+
+    try {
+      await adminUpdateSlot(id, {
+        date,
+        startTime: start + ':00',
+        endTime: end ? end + ':00' : null,
+        capacity
+      })
+      closeSlotEditForm()
+      loadSlots()
+    } catch (err) {
+      alert('更新に失敗しました：' + err.message)
     }
   }
 
