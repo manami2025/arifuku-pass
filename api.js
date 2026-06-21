@@ -128,6 +128,36 @@ export async function getAvailableSlots(experienceId) {
 }
 
 // -----------------------------------------------
+// 画像アップロード（Supabase Storage）
+// -----------------------------------------------
+
+const IMAGE_BUCKET = 'experience-images'
+
+/**
+ * 画像をSupabase Storageにアップロードし、公開URLを返す
+ * @param {File} file
+ * @returns {Promise<string>} 公開URL
+ */
+export async function uploadExperienceImage(file) {
+  const ext = file.name.split('.').pop()
+  const fileName = `${crypto.randomUUID()}.${ext}`
+
+  const { error: uploadError } = await supabase
+    .storage
+    .from(IMAGE_BUCKET)
+    .upload(fileName, file, { cacheControl: '3600', upsert: false })
+
+  if (uploadError) throw uploadError
+
+  const { data } = supabase
+    .storage
+    .from(IMAGE_BUCKET)
+    .getPublicUrl(fileName)
+
+  return data.publicUrl
+}
+
+// -----------------------------------------------
 // 管理画面用
 // -----------------------------------------------
 

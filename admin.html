@@ -242,6 +242,61 @@
     margin-top: 16px;
   }
 
+  /* ---------- 画像アップロード ---------- */
+  .upload-area {
+    border: 2px dashed #d6d0c4;
+    border-radius: 10px;
+    background: #faf8f5;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-area.dragover {
+    border-color: #3d6b4f;
+    background: #e3efe6;
+  }
+  .upload-placeholder {
+    text-align: center;
+    color: #8a8070;
+    font-size: 12px;
+    padding: 16px;
+  }
+  .upload-icon { font-size: 24px; margin-bottom: 6px; }
+  .upload-preview {
+    width: 100%;
+    position: relative;
+  }
+  .upload-preview img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    display: block;
+  }
+  .upload-remove {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .upload-status {
+    font-size: 11px;
+    color: #3d6b4f;
+    margin-top: 6px;
+    min-height: 14px;
+  }
+  .upload-status.error { color: #c0392b; }
+
   /* ---------- 予約枠タブ ---------- */
   .slot-toolbar {
     display: flex;
@@ -431,7 +486,22 @@
       <input type="hidden" id="exp-id">
       <div class="field"><label>タイトル *</label><input id="exp-title"></div>
       <div class="field"><label>見出し説明</label><textarea id="exp-subtitle"></textarea></div>
-      <div class="field"><label>画像ファイル名・URL</label><input id="exp-image" placeholder="images/W1.jpg"></div>
+      <div class="field">
+        <label>画像</label>
+        <div class="upload-area" id="exp-upload-area">
+          <div class="upload-preview" id="exp-upload-preview" style="display:none;">
+            <img id="exp-upload-preview-img" src="" alt="">
+            <button type="button" class="upload-remove" onclick="removeExpImage()">×</button>
+          </div>
+          <div class="upload-placeholder" id="exp-upload-placeholder">
+            <div class="upload-icon">📷</div>
+            <div>クリック または ドラッグ＆ドロップで画像を選択</div>
+          </div>
+          <input type="file" id="exp-image-file" accept="image/*" style="display:none;">
+        </div>
+        <div class="upload-status" id="exp-upload-status"></div>
+        <input type="hidden" id="exp-image">
+      </div>
       <div class="field-row">
         <div class="field"><label>料金（円）</label><input id="exp-price" type="number"></div>
         <div class="field"><label>所要時間</label><input id="exp-duration" placeholder="〜30分"></div>
@@ -511,7 +581,8 @@
   import {
     adminGetExperiences, adminInsertExperience, adminUpdateExperience,
     adminToggleExperienceVisibility, adminDeleteExperience,
-    adminInsertSlot, adminGetSlots, adminUpdateSlot, adminDeleteSlot
+    adminInsertSlot, adminGetSlots, adminUpdateSlot, adminDeleteSlot,
+    uploadExperienceImage
   } from './api.js'
 
   // ⚠️ 簡易パスワードゲート（ABEE方式と同じ運用）
@@ -627,6 +698,7 @@
       document.getElementById('exp-title').value = e.タイトル ?? ''
       document.getElementById('exp-subtitle').value = e.見出し説明 ?? ''
       document.getElementById('exp-image').value = e.image_url ?? ''
+      setExpImagePreview(e.image_url)
       document.getElementById('exp-price').value = e.料金 ?? ''
       document.getElementById('exp-duration').value = e.所要時間 ?? ''
       document.getElementById('exp-schedule').value = e.スケジュール ?? ''
@@ -640,8 +712,78 @@
       ;['exp-id','exp-title','exp-subtitle','exp-image','exp-price','exp-duration',
         'exp-schedule','exp-detail','exp-notice','exp-belongings','exp-place','exp-meeting']
         .forEach(id => document.getElementById(id).value = '')
+      setExpImagePreview(null)
+    }
+    document.getElementById('exp-upload-status').textContent = ''
+    document.getElementById('exp-upload-status').classList.remove('error')
+  }
+
+  function setExpImagePreview(url) {
+    const preview = document.getElementById('exp-upload-preview')
+    const previewImg = document.getElementById('exp-upload-preview-img')
+    const placeholder = document.getElementById('exp-upload-placeholder')
+    if (url) {
+      previewImg.src = url
+      preview.style.display = 'block'
+      placeholder.style.display = 'none'
+    } else {
+      preview.style.display = 'none'
+      placeholder.style.display = 'block'
     }
   }
+
+  window.removeExpImage = (ev) => {
+    if (ev) ev.stopPropagation()
+    document.getElementById('exp-image').value = ''
+    setExpImagePreview(null)
+  }
+
+  async function handleExpImageFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      document.getElementById('exp-upload-status').textContent = '画像ファイルを選択してください'
+      document.getElementById('exp-upload-status').classList.add('error')
+      return
+    }
+    const statusEl = document.getElementById('exp-upload-status')
+    statusEl.classList.remove('error')
+    statusEl.textContent = 'アップロード中...'
+
+    // 先にプレビューだけ即時表示
+    const localUrl = URL.createObjectURL(file)
+    setExpImagePreview(localUrl)
+
+    try {
+      const publicUrl = await uploadExperienceImage(file)
+      document.getElementById('exp-image').value = publicUrl
+      setExpImagePreview(publicUrl)
+      statusEl.textContent = 'アップロード完了'
+    } catch (err) {
+      statusEl.textContent = 'アップロード失敗：' + err.message
+      statusEl.classList.add('error')
+    }
+  }
+
+  // アップロードエリアのイベント設定
+  const uploadArea = document.getElementById('exp-upload-area')
+  const fileInput = document.getElementById('exp-image-file')
+
+  uploadArea.addEventListener('click', () => fileInput.click())
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleExpImageFile(fileInput.files[0])
+  })
+  uploadArea.addEventListener('dragover', (ev) => {
+    ev.preventDefault()
+    uploadArea.classList.add('dragover')
+  })
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover')
+  })
+  uploadArea.addEventListener('drop', (ev) => {
+    ev.preventDefault()
+    uploadArea.classList.remove('dragover')
+    const file = ev.dataTransfer.files[0]
+    if (file) handleExpImageFile(file)
+  })
 
   window.closeExpForm = () => {
     document.getElementById('exp-modal-bg').classList.remove('show')
