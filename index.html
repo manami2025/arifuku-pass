@@ -99,6 +99,53 @@
       color: #555;
     }
 
+    /* 予約中の体験 */
+    .my-reservations {
+      margin: 0 12px 18px;
+    }
+    .my-res-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .my-res-card {
+      background: #fff;
+      border: 1.5px solid #d6d0c4;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .my-res-card .icon {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: #e3efe6;
+      color: #3d6b4f;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .my-res-card .info { flex: 1; min-width: 0; }
+    .my-res-card .title {
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .my-res-card .meta {
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+    }
+    .my-res-card .arrow {
+      color: #c8c0b0;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
     /* ウェルカムメッセージ */
     .welcome {
       text-align: center;
@@ -278,6 +325,12 @@
     </div>
   </div>
 
+  <!-- 予約中の体験 -->
+  <div class="my-reservations" id="my-reservations-section" style="display:none;">
+    <p class="section-title" style="text-align:left;padding:0 4px;margin-bottom:10px;">予約中の体験</p>
+    <div class="my-res-list" id="my-res-list"></div>
+  </div>
+
   <!-- ウェルカムメッセージ -->
   <div class="welcome">
     有福温泉がもっと楽しくなるコンテンツを集めました！<br>
@@ -309,7 +362,7 @@
 
   <script type="module">
     import { LIFF_ID } from './config.js'
-    import { getMember, insertMember, getMemberStatus, getExperiences } from './api.js'
+    import { getMember, insertMember, getMemberStatus, getExperiences, getReservations } from './api.js'
 
     let allExperiences = []
     let currentFilter = 'all'
@@ -375,6 +428,42 @@
       location.href = `detail.html?id=${encodeURIComponent(id)}`
     }
 
+    function formatDateShort(dateStr) {
+      if (!dateStr) return ''
+      const d = new Date(dateStr + 'T00:00:00')
+      const w = ['日','月','火','水','木','金','土'][d.getDay()]
+      return `${d.getMonth()+1}/${d.getDate()}(${w})`
+    }
+
+    async function loadMyReservations(lineUserId) {
+      try {
+        const reservations = await getReservations(lineUserId)
+        const todayStr = new Date().toISOString().slice(0, 10)
+        const upcoming = (reservations ?? [])
+          .filter(r => r.日付 >= todayStr)
+          .sort((a, b) => (a.日付 ?? '').localeCompare(b.日付 ?? ''))
+
+        const section = document.getElementById('my-reservations-section')
+        if (upcoming.length === 0) {
+          section.style.display = 'none'
+          return
+        }
+        section.style.display = 'block'
+        document.getElementById('my-res-list').innerHTML = upcoming.map(r => `
+          <div class="my-res-card" onclick="location.href='mypage.html'">
+            <div class="icon">♨</div>
+            <div class="info">
+              <div class="title">${r.体験タイトル ?? '(体験情報なし)'}</div>
+              <div class="meta">${formatDateShort(r.日付)} ${(r.時間 ?? '').slice(0,5)}・${r.人数 ?? 1}名</div>
+            </div>
+            <div class="arrow">›</div>
+          </div>
+        `).join('')
+      } catch (err) {
+        console.error('予約一覧の取得に失敗:', err)
+      }
+    }
+
     async function main() {
       try {
         await liff.init({ liffId: LIFF_ID })
@@ -398,6 +487,9 @@
             document.getElementById('status-label').textContent = status.項目 ?? '新米住民'
             document.getElementById('status-stars').textContent = renderStars(status.星)
           }
+
+          // 予約中の体験
+          loadMyReservations(lineUserId)
         } else {
           liff.login()
           return
