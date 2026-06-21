@@ -317,6 +317,17 @@ export async function adminGetReservations(userId, isAdmin) {
   return data ?? []
 }
 
+/**
+ * 予約を受付済みにする（参加回数も+1される）
+ * @param {string} reservationId
+ */
+export async function adminCheckInReservation(reservationId) {
+  const { error } = await supabase.rpc('admin_check_in_reservation', {
+    p_reservation_id: reservationId
+  })
+  if (error) throw error
+}
+
 // -----------------------------------------------
 // 管理画面用
 // -----------------------------------------------

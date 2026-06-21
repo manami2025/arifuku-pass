@@ -419,6 +419,19 @@
     color: #3d6b4f;
     margin-bottom: 4px;
   }
+  .res-row.checked-in {
+    background: #f5f2ec;
+    border-color: #e0dace;
+  }
+  .checkin-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #3d6b4f;
+    background: #e3efe6;
+    padding: 5px 10px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
 
   /* ---------- ユーザー管理 ---------- */
   .user-list { display: flex; flex-direction: column; gap: 10px; }
@@ -559,6 +572,8 @@
     .res-row .exp-title { width: auto; flex: 1 1 100%; order: 1; white-space: normal; }
     .res-row .name { flex: 1 1 100%; order: 3; }
     .res-row .count { order: 2; }
+    .res-row .btn,
+    .res-row .checkin-badge { order: 4; flex: 1 1 100%; text-align: center; }
 
     /* ユーザー一覧 */
     .user-row {
@@ -987,7 +1002,7 @@
     uploadExperienceImage,
     adminLogin, adminCreateUser, adminGetUsers, adminDeleteUser, adminResetPassword,
     adminAssignStaff, adminUnassignStaff, adminGetStaffForExperience,
-    adminGetMyExperiences, adminGetReservations
+    adminGetMyExperiences, adminGetReservations, adminCheckInReservation
   } from './api.js'
 
   // ---------------- ログイン ----------------
@@ -1694,14 +1709,29 @@
     el.innerHTML = `
       <div class="day-label">${formatDate(resSelectedDate)}の予約（${sorted.length}件）</div>
       ${sorted.map(r => `
-        <div class="res-row">
+        <div class="res-row ${r.受付済み ? 'checked-in' : ''}">
           <div class="time">${(r.時間 ?? '').slice(0,5)}</div>
           <div class="exp-title">${r.タイトル ?? '(削除済み体験)'}</div>
           <div class="name">${r.氏名 ?? ''}${r.予約内容 ? '・' + r.予約内容 : ''}</div>
           <div class="count">${r.人数 ?? 1}名</div>
+          ${r.受付済み
+            ? `<span class="checkin-badge">✓ 受付済み</span>`
+            : `<button class="btn btn-primary btn-small" onclick="doCheckIn('${r.reservation_id}')">受付</button>`
+          }
         </div>
       `).join('')}
     `
+  }
+
+  window.doCheckIn = async (reservationId) => {
+    try {
+      await adminCheckInReservation(reservationId)
+      allReservationsCache = await adminGetReservations(currentUser.id, currentUser.権限 === 'admin')
+      renderResCalendar()
+      renderResDayDetail()
+    } catch (err) {
+      alert('受付処理に失敗しました：' + err.message)
+    }
   }
 
   // ---------------- ユーザー管理（管理者のみ） ----------------
