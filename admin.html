@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARIFUKU PASS 管理画面</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+    background: #f2f0ec;
+    color: #2c2c2c;
+  }
+
+  /* ---------- パスワードゲート ---------- */
+  #gate {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2c2c2c;
+  }
+  .gate-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 36px 32px;
+    width: 320px;
+    text-align: center;
+  }
+  .gate-box h1 {
+    font-size: 16px;
+    color: #3d6b4f;
+    margin-bottom: 4px;
+    letter-spacing: 0.06em;
+  }
+  .gate-box p {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 20px;
+  }
+  .gate-box input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .gate-box button {
+    width: 100%;
+    padding: 10px;
+    background: #3d6b4f;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .gate-error {
+    color: #c0392b;
+    font-size: 12px;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+
+  /* ---------- 管理画面本体 ---------- */
+  #app { display: none; }
+
+  .topbar {
+    background: #fff;
+    border-bottom: 1px solid #d6d0c4;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar h1 {
+    font-size: 15px;
+    font-weight: 800;
+    color: #3d6b4f;
+    letter-spacing: 0.06em;
+  }
+  .tabs {
+    display: flex;
+    gap: 6px;
+  }
+  .tab-btn {
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1.5px solid #d6d0c4;
+    background: #fff;
+    color: #555;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .tab-btn.active {
+    background: #3d6b4f;
+    border-color: #3d6b4f;
+    color: #fff;
+  }
+
+  .panel { display: none; padding: 20px; max-width: 920px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .panel-head h2 { font-size: 15px; font-weight: 700; }
+
+  .btn {
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-primary { background: #3d6b4f; color: #fff; }
+  .btn-outline { background: #fff; border: 1.5px solid #d6d0c4; color: #444; }
+  .btn-danger { background: #fff; border: 1.5px solid #e0a8a0; color: #c0392b; }
+  .btn-small { padding: 5px 10px; font-size: 11px; }
+
+  /* ---------- 体験内容一覧 ---------- */
+  .exp-list { display: flex; flex-direction: column; gap: 10px; }
+  .exp-row {
+    background: #fff;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .exp-row img {
+    width: 56px; height: 56px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #e8e4dc;
+    flex-shrink: 0;
+  }
+  .exp-row .no-img {
+    width: 56px; height: 56px;
+    border-radius: 8px;
+    background: #e8e4dc;
+    display: flex; align-items: center; justify-content: center;
+    color: #a08878;
+    flex-shrink: 0;
+  }
+  .exp-row .info { flex: 1; min-width: 0; }
+  .exp-row .info .title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .exp-row .info .meta { font-size: 11px; color: #888; }
+  .exp-row .actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+  }
+  .badge-on { background: #e3efe6; color: #3d6b4f; }
+  .badge-off { background: #f0ebe4; color: #a08878; }
+
+  .toggle-switch {
+    width: 38px; height: 22px;
+    border-radius: 12px;
+    background: #d6d0c4;
+    position: relative;
+    cursor: pointer;
+    border: none;
+    flex-shrink: 0;
+  }
+  .toggle-switch.on { background: #3d6b4f; }
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.15s;
+  }
+  .toggle-switch.on::after { transform: translateX(16px); }
+
+  /* ---------- フォームモーダル ---------- */
+  .modal-bg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 24px 12px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 480px;
+    padding: 22px;
+  }
+  .modal h3 { font-size: 15px; margin-bottom: 16px; }
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+
+  /* ---------- 予約枠タブ ---------- */
+  .slot-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .slot-toolbar select, .slot-toolbar input {
+    padding: 8px 10px;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  .slot-list { display: flex; flex-direction: column; gap: 8px; }
+  .slot-row {
+    background: #fff;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .slot-row .date { font-weight: 700; width: 92px; flex-shrink: 0; }
+  .slot-row .time { color: #555; width: 110px; flex-shrink: 0; }
+  .slot-row .exp-title { flex: 1; color: #333; }
+  .slot-row .cap {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: #f0ebe4;
+    color: #3d6b4f;
+    flex-shrink: 0;
+  }
+  .slot-row .cap.full { background: #f5e3e0; color: #c0392b; }
+
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #a08878;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- パスワードゲート -->
+  <div id="gate">
+    <div class="gate-box">
+      <h1>ARIFUKU PASS</h1>
+      <p>管理画面 — パスワードを入力してください</p>
+      <input type="password" id="gate-pw" placeholder="パスワード">
+      <button onclick="checkPassword()">入る</button>
+      <div class="gate-error" id="gate-error"></div>
+    </div>
+  </div>
+
+  <!-- 管理画面本体 -->
+  <div id="app">
+    <div class="topbar">
+      <h1>ARIFUKU PASS 管理画面</h1>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="experiences">体験内容</button>
+        <button class="tab-btn" data-tab="slots">予約枠</button>
+      </div>
+    </div>
+
+    <!-- 体験内容パネル -->
+    <div class="panel active" id="panel-experiences">
+      <div class="panel-head">
+        <h2>体験内容一覧</h2>
+        <button class="btn btn-primary" onclick="openExpForm()">＋ 新規追加</button>
+      </div>
+      <div class="exp-list" id="exp-list">
+        <div class="empty">読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- 予約枠パネル -->
+    <div class="panel" id="panel-slots">
+      <div class="panel-head">
+        <h2>予約枠管理</h2>
+        <button class="btn btn-primary" onclick="openSlotForm()">＋ 枠を追加</button>
+      </div>
+      <div class="slot-toolbar">
+        <input type="month" id="slot-month">
+        <select id="slot-filter-exp"><option value="">すべての体験</option></select>
+      </div>
+      <div class="slot-list" id="slot-list">
+        <div class="empty">読み込み中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 体験内容フォームモーダル -->
+  <div class="modal-bg" id="exp-modal-bg">
+    <div class="modal">
+      <h3 id="exp-modal-title">体験内容を追加</h3>
+      <input type="hidden" id="exp-id">
+      <div class="field"><label>タイトル *</label><input id="exp-title"></div>
+      <div class="field"><label>見出し説明</label><textarea id="exp-subtitle"></textarea></div>
+      <div class="field"><label>画像ファイル名・URL</label><input id="exp-image" placeholder="images/W1.jpg"></div>
+      <div class="field-row">
+        <div class="field"><label>料金（円）</label><input id="exp-price" type="number"></div>
+        <div class="field"><label>所要時間</label><input id="exp-duration" placeholder="〜30分"></div>
+      </div>
+      <div class="field"><label>スケジュール</label><input id="exp-schedule" placeholder="毎日10:00〜17:00"></div>
+      <div class="field"><label>体験内容詳細</label><textarea id="exp-detail"></textarea></div>
+      <div class="field"><label>注意事項</label><textarea id="exp-notice"></textarea></div>
+      <div class="field"><label>持ち物</label><input id="exp-belongings"></div>
+      <div class="field-row">
+        <div class="field"><label>体験場所</label><input id="exp-place"></div>
+        <div class="field"><label>集合場所</label><input id="exp-meeting"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeExpForm()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveExperience()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 予約枠フォームモーダル -->
+  <div class="modal-bg" id="slot-modal-bg">
+    <div class="modal">
+      <h3>予約枠を追加</h3>
+      <div class="field">
+        <label>体験 *</label>
+        <select id="slot-exp"></select>
+      </div>
+      <div class="field"><label>日付 *</label><input id="slot-date" type="date"></div>
+      <div class="field-row">
+        <div class="field"><label>開始時刻 *</label><input id="slot-start" type="time"></div>
+        <div class="field"><label>終了時刻</label><input id="slot-end" type="time"></div>
+      </div>
+      <div class="field"><label>定員</label><input id="slot-capacity" type="number" value="1" min="1"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeSlotForm()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveSlot()">追加</button>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+  import {
+    adminGetExperiences, adminInsertExperience, adminUpdateExperience,
+    adminToggleExperienceVisibility, adminDeleteExperience,
+    adminInsertSlot, adminGetSlots, adminDeleteSlot
+  } from './api.js'
+
+  // ⚠️ 簡易パスワードゲート（ABEE方式と同じ運用）
+  const ADMIN_PASSWORD = 'ARIFUKU2026'
+
+  window.checkPassword = function () {
+    const input = document.getElementById('gate-pw').value
+    if (input === ADMIN_PASSWORD) {
+      document.getElementById('gate').style.display = 'none'
+      document.getElementById('app').style.display = 'block'
+      sessionStorage.setItem('arifuku_admin_ok', '1')
+      initApp()
+    } else {
+      document.getElementById('gate-error').textContent = 'パスワードが違います'
+    }
+  }
+
+  // セッション内なら自動通過
+  if (sessionStorage.getItem('arifuku_admin_ok') === '1') {
+    document.getElementById('gate').style.display = 'none'
+    document.getElementById('app').style.display = 'block'
+    initApp()
+  }
+
+  // ---------------- タブ切り替え ----------------
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
+      btn.classList.add('active')
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active')
+      if (btn.dataset.tab === 'slots') loadSlots()
+    })
+  })
+
+  let experiencesCache = []
+
+  function initApp() {
+    loadExperiences()
+    const monthInput = document.getElementById('slot-month')
+    const now = new Date()
+    monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    monthInput.addEventListener('change', loadSlots)
+    document.getElementById('slot-filter-exp').addEventListener('change', loadSlots)
+  }
+
+  // ---------------- 体験内容 ----------------
+  async function loadExperiences() {
+    const el = document.getElementById('exp-list')
+    el.innerHTML = '<div class="empty">読み込み中...</div>'
+    try {
+      experiencesCache = await adminGetExperiences()
+      renderExperiences()
+      fillExpSelects()
+    } catch (err) {
+      el.innerHTML = `<div class="empty">読み込みに失敗しました：${err.message}</div>`
+    }
+  }
+
+  function renderExperiences() {
+    const el = document.getElementById('exp-list')
+    if (experiencesCache.length === 0) {
+      el.innerHTML = '<div class="empty">体験内容がまだありません</div>'
+      return
+    }
+    el.innerHTML = experiencesCache.map(e => `
+      <div class="exp-row">
+        ${e.image_url
+          ? `<img src="${e.image_url}" alt="">`
+          : `<div class="no-img">♨</div>`
+        }
+        <div class="info">
+          <div class="title">${e.タイトル ?? ''}</div>
+          <div class="meta">
+            ${e.所要時間 ?? ''} ${e.料金 != null ? '・¥' + e.料金.toLocaleString() : ''}
+            <span class="badge ${e.公開 ? 'badge-on' : 'badge-off'}">${e.公開 ? '公開中' : '非公開'}</span>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="toggle-switch ${e.公開 ? 'on' : ''}" onclick="toggleVisibility('${e.id}', ${!e.公開})" title="公開切替"></button>
+          <button class="btn btn-outline btn-small" onclick="openExpForm('${e.id}')">編集</button>
+          <button class="btn btn-danger btn-small" onclick="deleteExperience('${e.id}')">削除</button>
+        </div>
+      </div>
+    `).join('')
+  }
+
+  window.toggleVisibility = async (id, newState) => {
+    try {
+      await adminToggleExperienceVisibility(id, newState)
+      loadExperiences()
+    } catch (err) {
+      alert('更新に失敗しました：' + err.message)
+    }
+  }
+
+  window.deleteExperience = async (id) => {
+    if (!confirm('この体験内容を削除しますか？関連する予約枠も削除されます。')) return
+    try {
+      await adminDeleteExperience(id)
+      loadExperiences()
+    } catch (err) {
+      alert('削除に失敗しました：' + err.message)
+    }
+  }
+
+  window.openExpForm = (id) => {
+    document.getElementById('exp-modal-bg').classList.add('show')
+    if (id) {
+      const e = experiencesCache.find(x => x.id === id)
+      document.getElementById('exp-modal-title').textContent = '体験内容を編集'
+      document.getElementById('exp-id').value = e.id
+      document.getElementById('exp-title').value = e.タイトル ?? ''
+      document.getElementById('exp-subtitle').value = e.見出し説明 ?? ''
+      document.getElementById('exp-image').value = e.image_url ?? ''
+      document.getElementById('exp-price').value = e.料金 ?? ''
+      document.getElementById('exp-duration').value = e.所要時間 ?? ''
+      document.getElementById('exp-schedule').value = e.スケジュール ?? ''
+      document.getElementById('exp-detail').value = e.体験内容詳細 ?? ''
+      document.getElementById('exp-notice').value = e.注意事項 ?? ''
+      document.getElementById('exp-belongings').value = e.持ち物 ?? ''
+      document.getElementById('exp-place').value = e.体験場所 ?? ''
+      document.getElementById('exp-meeting').value = e.集合場所 ?? ''
+    } else {
+      document.getElementById('exp-modal-title').textContent = '体験内容を追加'
+      ;['exp-id','exp-title','exp-subtitle','exp-image','exp-price','exp-duration',
+        'exp-schedule','exp-detail','exp-notice','exp-belongings','exp-place','exp-meeting']
+        .forEach(id => document.getElementById(id).value = '')
+    }
+  }
+
+  window.closeExpForm = () => {
+    document.getElementById('exp-modal-bg').classList.remove('show')
+  }
+
+  window.saveExperience = async () => {
+    const id = document.getElementById('exp-id').value
+    const title = document.getElementById('exp-title').value.trim()
+    if (!title) { alert('タイトルを入力してください'); return }
+
+    const payload = {
+      タイトル:     title,
+      見出し説明:   document.getElementById('exp-subtitle').value || null,
+      image_url:    document.getElementById('exp-image').value || null,
+      料金:         document.getElementById('exp-price').value ? parseInt(document.getElementById('exp-price').value) : null,
+      所要時間:     document.getElementById('exp-duration').value || null,
+      スケジュール: document.getElementById('exp-schedule').value || null,
+      体験内容詳細: document.getElementById('exp-detail').value || null,
+      注意事項:     document.getElementById('exp-notice').value || null,
+      持ち物:       document.getElementById('exp-belongings').value || null,
+      体験場所:     document.getElementById('exp-place').value || null,
+      集合場所:     document.getElementById('exp-meeting').value || null,
+    }
+
+    try {
+      if (id) {
+        await adminUpdateExperience(id, payload)
+      } else {
+        await adminInsertExperience(payload)
+      }
+      closeExpForm()
+      loadExperiences()
+    } catch (err) {
+      alert('保存に失敗しました：' + err.message)
+    }
+  }
+
+  // ---------------- 予約枠 ----------------
+  function fillExpSelects() {
+    const opts = experiencesCache.map(e => `<option value="${e.id}">${e.タイトル}</option>`).join('')
+    document.getElementById('slot-exp').innerHTML = opts
+    document.getElementById('slot-filter-exp').innerHTML =
+      '<option value="">すべての体験</option>' + opts
+  }
+
+  async function loadSlots() {
+    const el = document.getElementById('slot-list')
+    el.innerHTML = '<div class="empty">読み込み中...</div>'
+    const month = document.getElementById('slot-month').value
+    if (!month) return
+    try {
+      let slots = await adminGetSlots(month)
+      const filterExp = document.getElementById('slot-filter-exp').value
+      if (filterExp) slots = slots.filter(s => s.体験内容_id === filterExp)
+      renderSlots(slots)
+    } catch (err) {
+      el.innerHTML = `<div class="empty">読み込みに失敗しました：${err.message}</div>`
+    }
+  }
+
+  function renderSlots(slots) {
+    const el = document.getElementById('slot-list')
+    if (!slots || slots.length === 0) {
+      el.innerHTML = '<div class="empty">この月の予約枠はまだありません</div>'
+      return
+    }
+    el.innerHTML = slots.map(s => {
+      const isFull = s.予約数 >= s.定員
+      return `
+        <div class="slot-row">
+          <div class="date">${formatDate(s.日付)}</div>
+          <div class="time">${(s.開始時刻 ?? '').slice(0,5)}${s.終了時刻 ? '〜' + s.終了時刻.slice(0,5) : ''}</div>
+          <div class="exp-title">${s.タイトル ?? '(削除済み体験)'}</div>
+          <div class="cap ${isFull ? 'full' : ''}">${s.予約数}/${s.定員}</div>
+          <button class="btn btn-danger btn-small" onclick="deleteSlot('${s.slot_id}')">削除</button>
+        </div>
+      `
+    }).join('')
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return ''
+    const d = new Date(dateStr + 'T00:00:00')
+    const w = ['日','月','火','水','木','金','土'][d.getDay()]
+    return `${d.getMonth()+1}/${d.getDate()}(${w})`
+  }
+
+  window.deleteSlot = async (id) => {
+    if (!confirm('この予約枠を削除しますか？')) return
+    try {
+      await adminDeleteSlot(id)
+      loadSlots()
+    } catch (err) {
+      alert('削除に失敗しました：' + err.message)
+    }
+  }
+
+  window.openSlotForm = () => {
+    if (experiencesCache.length === 0) {
+      alert('先に体験内容を登録してください')
+      return
+    }
+    document.getElementById('slot-date').value = ''
+    document.getElementById('slot-start').value = ''
+    document.getElementById('slot-end').value = ''
+    document.getElementById('slot-capacity').value = 1
+    document.getElementById('slot-modal-bg').classList.add('show')
+  }
+
+  window.closeSlotForm = () => {
+    document.getElementById('slot-modal-bg').classList.remove('show')
+  }
+
+  window.saveSlot = async () => {
+    const experienceId = document.getElementById('slot-exp').value
+    const date = document.getElementById('slot-date').value
+    const start = document.getElementById('slot-start').value
+    const end = document.getElementById('slot-end').value
+    const capacity = parseInt(document.getElementById('slot-capacity').value) || 1
+
+    if (!experienceId || !date || !start) {
+      alert('体験・日付・開始時刻は必須です')
+      return
+    }
+
+    try {
+      await adminInsertSlot({
+        experienceId,
+        date,
+        startTime: start + ':00',
+        endTime: end ? end + ':00' : null,
+        capacity
+      })
+      closeSlotForm()
+      loadSlots()
+    } catch (err) {
+      alert('追加に失敗しました：' + err.message)
+    }
+  }
+</script>
+
+</body>
+</html>
