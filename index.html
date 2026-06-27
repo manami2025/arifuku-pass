@@ -318,6 +318,98 @@
 </head>
 <body>
 
+  <!-- スプラッシュ画面 -->
+  <div id="splash">
+    <div class="splash-inner">
+      <div class="splash-icon-wrap">
+        <div class="splash-icon">♨</div>
+        <div class="steam-wrap">
+          <div class="steam s1"></div>
+          <div class="steam s2"></div>
+          <div class="steam s3"></div>
+        </div>
+      </div>
+      <div class="splash-title">ARIFUKU PASS</div>
+      <div class="splash-sub">有福温泉</div>
+    </div>
+  </div>
+
+  <style>
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: #3d6b4f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    #splash.hide {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .splash-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .splash-icon-wrap {
+      position: relative;
+      width: 90px;
+      height: 110px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .splash-icon {
+      font-size: 64px;
+      line-height: 1;
+      filter: drop-shadow(0 4px 16px rgba(0,0,0,0.18));
+    }
+    .steam-wrap {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      height: 44px;
+    }
+    .steam {
+      width: 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.55);
+      animation: steam-rise 1.8s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+    .steam.s1 { height: 28px; animation-delay: 0s; }
+    .steam.s2 { height: 36px; animation-delay: 0.3s; }
+    .steam.s3 { height: 22px; animation-delay: 0.6s; }
+
+    @keyframes steam-rise {
+      0%   { transform: scaleY(0.4) translateY(0); opacity: 0; }
+      30%  { opacity: 0.9; }
+      70%  { opacity: 0.5; }
+      100% { transform: scaleY(1.2) translateY(-18px); opacity: 0; }
+    }
+
+    .splash-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.12em;
+    }
+    .splash-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 0.08em;
+    }
+  </style>
+
   <!-- ヘッダー -->
   <header class="header">
     <img class="logo" src="ロゴ.png" alt="ARIFUKU PASS" onerror="this.style.display='none'">
@@ -485,6 +577,14 @@
       }
     }
 
+    function hideSplash() {
+      const splash = document.getElementById('splash')
+      if (splash) {
+        splash.classList.add('hide')
+        setTimeout(() => splash.remove(), 500)
+      }
+    }
+
     async function main() {
       try {
         await liff.init({ liffId: LIFF_ID })
@@ -527,11 +627,14 @@
         allExperiences = await getExperiences()
         applyFilter()
 
+        // スプラッシュを非表示
+        hideSplash()
+
       } catch (err) {
         console.error(err)
+        hideSplash()
         document.getElementById('card-list').innerHTML =
           `<div class="error-msg">読み込みに失敗しました<br><small>${err.message}</small></div>`
-        // デバッグ用：画面下にエラー詳細を表示
         document.body.insertAdjacentHTML('beforeend', `
           <div style="position:fixed;bottom:0;left:0;right:0;background:#c0392b;color:#fff;padding:16px;font-size:12px;z-index:9999;word-break:break-all;max-height:40vh;overflow:auto;">
             ❌ ${err.message}<br>${err.stack ?? ''}
