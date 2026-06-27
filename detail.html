@@ -292,6 +292,47 @@
     }
     .bottom-bar button:disabled { background: #c8c0b0; cursor: not-allowed; }
 
+    .complete-bar {
+      width: 100%;
+    }
+    .complete-msg {
+      font-size: 14px;
+      font-weight: 700;
+      color: #3d6b4f;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .complete-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .cal-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 11px 10px;
+      border-radius: 22px;
+      background: #3d6b4f;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      text-align: center;
+    }
+    .list-btn {
+      flex: 1;
+      padding: 11px 10px;
+      border-radius: 22px;
+      border: 1.5px solid #3d6b4f;
+      background: #fff;
+      color: #3d6b4f;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
     .toast {
       position: fixed;
       top: 16px; left: 50%;
@@ -583,6 +624,23 @@
     document.getElementById('count-display').textContent = count
   }
 
+  function makeGoogleCalendarUrl(title, date, startTime, endTime, place) {
+    function toGCalDateTime(dateStr, timeStr) {
+      if (!dateStr || !timeStr) return ''
+      return dateStr.replace(/-/g, '') + 'T' + timeStr.replace(/:/g, '').slice(0, 6)
+    }
+    const start = toGCalDateTime(date, startTime)
+    const end = endTime ? toGCalDateTime(date, endTime) : toGCalDateTime(date, startTime)
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: title,
+      dates: `${start}/${end}`,
+      details: `有福温泉 ARIFUKU PASS で予約した体験です。`,
+      location: place ?? '有福温泉'
+    })
+    return `https://calendar.google.com/calendar/render?${params.toString()}`
+  }
+
   window.doReserve = async () => {
     if (!selectedSlot) return
     const btn = document.getElementById('reserve-btn')
@@ -602,8 +660,25 @@
         content: experience.タイトル,
         count
       })
-      showToast('予約が完了しました！')
-      setTimeout(() => { location.href = 'mypage.html' }, 1200)
+
+      // ボトムバーを予約完了UIに切り替え
+      const calUrl = makeGoogleCalendarUrl(
+        experience.タイトル,
+        selectedDate,
+        selectedSlot.開始時刻,
+        selectedSlot.終了時刻,
+        experience.集合場所 ?? experience.体験場所
+      )
+
+      document.querySelector('.bottom-bar').innerHTML = `
+        <div class="complete-bar">
+          <div class="complete-msg">✅ 予約が完了しました！</div>
+          <div class="complete-actions">
+            <a class="cal-btn" href="${calUrl}" target="_blank">📅 Googleカレンダーに追加</a>
+            <button class="list-btn" onclick="location.href='mypage.html'">予約一覧へ</button>
+          </div>
+        </div>
+      `
     } catch (err) {
       showToast('予約に失敗しました：' + err.message)
       btn.disabled = false
