@@ -482,6 +482,79 @@
     cursor: pointer;
   }
 
+  /* ---------- 掲載申請 ---------- */
+  .app-filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .filter-tab {
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1.5px solid #d6d0c4;
+    background: #fff;
+    color: #555;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .filter-tab.active {
+    background: #3d6b4f;
+    border-color: #3d6b4f;
+    color: #fff;
+  }
+  .app-list { display: flex; flex-direction: column; gap: 10px; }
+  .app-card {
+    background: #fff;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .app-card .app-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+    gap: 10px;
+  }
+  .app-card .app-title { font-size: 14px; font-weight: 700; flex: 1; min-width: 0; }
+  .app-card .app-meta { font-size: 11px; color: #888; margin-bottom: 10px; }
+  .app-card .app-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .status-badge.pending  { background: #fef3e2; color: #e67e22; }
+  .status-badge.approved { background: #e3efe6; color: #3d6b4f; }
+  .status-badge.rejected { background: #f5e3e0; color: #c0392b; }
+  .app-card .reject-reason {
+    font-size: 12px;
+    color: #c0392b;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #fdf3f2;
+    border-radius: 8px;
+  }
+  .app-detail-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .app-detail-row .label {
+    font-weight: 700;
+    color: #3d6b4f;
+    min-width: 100px;
+    flex-shrink: 0;
+    font-size: 12px;
+  }
+  .app-detail-row .value { color: #333; flex: 1; }
+
   /* ---------- スマホ対応 ---------- */
   @media (max-width: 680px) {
     .topbar {
@@ -766,6 +839,7 @@
           <button class="tab-btn active" data-tab="experiences">体験内容</button>
           <button class="tab-btn" data-tab="slots">予約枠</button>
           <button class="tab-btn" data-tab="reservations">予約一覧</button>
+          <button class="tab-btn" id="tab-applications-btn" data-tab="applications">掲載申請</button>
           <button class="tab-btn" id="tab-users-btn" data-tab="users" style="display:none;">ユーザー管理</button>
         </div>
         <div class="user-info">
@@ -826,6 +900,33 @@
 
       <div class="res-day-detail" id="res-day-detail">
         <div class="empty">カレンダーの日付をタップすると、その日の予約が表示されます</div>
+      </div>
+    </div>
+
+    <!-- 掲載申請パネル -->
+    <div class="panel" id="panel-applications">
+      <div class="panel-head">
+        <h2 id="app-panel-title">掲載申請</h2>
+        <button class="btn btn-primary" id="app-new-btn" onclick="openAppForm()">＋ 新規申請</button>
+      </div>
+
+      <!-- スタッフ：自分の申請一覧 -->
+      <div id="my-app-section">
+        <div class="app-list" id="my-app-list">
+          <div class="empty">読み込み中...</div>
+        </div>
+      </div>
+
+      <!-- 管理者：全申請一覧（未処理のみ表示） -->
+      <div id="admin-app-section" style="display:none;">
+        <div class="app-filter-row">
+          <button class="filter-tab active" data-status="pending" onclick="setAppFilter('pending')">未処理</button>
+          <button class="filter-tab" data-status="approved" onclick="setAppFilter('approved')">承認済み</button>
+          <button class="filter-tab" data-status="rejected" onclick="setAppFilter('rejected')">却下済み</button>
+        </div>
+        <div class="app-list" id="admin-app-list">
+          <div class="empty">読み込み中...</div>
+        </div>
       </div>
     </div>
 
@@ -980,7 +1081,56 @@
     </div>
   </div>
 
-  <!-- パスワード再設定モーダル -->
+  <!-- 掲載申請フォームモーダル -->
+  <div class="modal-bg" id="app-modal-bg">
+    <div class="modal">
+      <h3>掲載申請</h3>
+      <div class="field"><label>タイトル *</label><input id="app-title"></div>
+      <div class="field"><label>見出し説明</label><textarea id="app-subtitle"></textarea></div>
+      <div class="field-row">
+        <div class="field"><label>料金（円）</label><input id="app-price" type="number"></div>
+        <div class="field"><label>所要時間</label><input id="app-duration" placeholder="〜30分"></div>
+      </div>
+      <div class="field"><label>体験内容詳細</label><textarea id="app-detail"></textarea></div>
+      <div class="field"><label>注意事項</label><textarea id="app-notice"></textarea></div>
+      <div class="field"><label>持ち物</label><input id="app-belongings"></div>
+      <div class="field-row">
+        <div class="field"><label>体験場所</label><input id="app-place"></div>
+        <div class="field"><label>体験場所の住所</label><input id="app-place-address"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>集合場所</label><input id="app-meeting"></div>
+        <div class="field"><label>集合場所の住所</label><input id="app-meeting-address"></div>
+      </div>
+      <div class="field"><label>連絡先（電話番号・メール） *</label><input id="app-contact"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeAppForm()">キャンセル</button>
+        <button class="btn btn-primary" onclick="submitApplication()">申請する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 却下理由モーダル -->
+  <div class="modal-bg" id="reject-modal-bg">
+    <div class="modal">
+      <h3>申請を却下</h3>
+      <input type="hidden" id="reject-app-id">
+      <div class="field"><label>却下理由 *</label><textarea id="reject-reason" placeholder="申請者に伝えるコメントを入力してください"></textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeRejectForm()">キャンセル</button>
+        <button class="btn btn-danger" onclick="doReject()">却下する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 申請詳細モーダル -->
+  <div class="modal-bg" id="app-detail-modal-bg">
+    <div class="modal">
+      <h3 id="app-detail-title">申請詳細</h3>
+      <div id="app-detail-body"></div>
+      <div id="app-detail-actions" class="modal-actions"></div>
+    </div>
+  </div>
   <div class="modal-bg" id="reset-pw-modal-bg">
     <div class="modal">
       <h3>パスワードを再設定</h3>
@@ -1002,7 +1152,9 @@
     uploadExperienceImage,
     adminLogin, adminCreateUser, adminGetUsers, adminDeleteUser, adminResetPassword,
     adminAssignStaff, adminUnassignStaff, adminGetStaffForExperience,
-    adminGetMyExperiences, adminGetReservations, adminCheckInReservation
+    adminGetMyExperiences, adminGetReservations, adminCheckInReservation,
+    adminSubmitApplication, adminGetApplications, adminGetMyApplications,
+    adminApproveApplication, adminRejectApplication
   } from './api.js'
 
   // ---------------- ログイン ----------------
@@ -1051,6 +1203,8 @@
       currentUser.権限 === 'admin' ? 'inline-block' : 'none'
     document.getElementById('exp-new-btn').style.display =
       currentUser.権限 === 'admin' ? 'inline-block' : 'none'
+    // 申請タブはスタッフ・管理者ともに表示（表示内容が切り替わる）
+    document.getElementById('tab-applications-btn').style.display = 'inline-block'
     initApp()
   }
 
@@ -1073,6 +1227,7 @@
       if (btn.dataset.tab === 'slots') loadSlots()
       if (btn.dataset.tab === 'reservations') loadReservations()
       if (btn.dataset.tab === 'users') loadUsers()
+      if (btn.dataset.tab === 'applications') loadApplications()
     })
   })
 
@@ -1826,6 +1981,199 @@
       alert('パスワードを変更しました')
     } catch (err) {
       alert('変更に失敗しました：' + err.message)
+    }
+  }
+
+  // ---------------- 掲載申請 ----------------
+  let appFilter = 'pending'
+  let allApplicationsCache = []
+
+  async function loadApplications() {
+    const isAdmin = currentUser.権限 === 'admin'
+    document.getElementById('my-app-section').style.display = isAdmin ? 'none' : 'block'
+    document.getElementById('admin-app-section').style.display = isAdmin ? 'block' : 'none'
+    document.getElementById('app-panel-title').textContent = isAdmin ? '掲載申請一覧' : '掲載申請'
+    document.getElementById('app-new-btn').style.display = isAdmin ? 'none' : 'inline-block'
+
+    if (isAdmin) {
+      try {
+        allApplicationsCache = await adminGetApplications()
+        renderAdminAppList()
+      } catch (err) {
+        document.getElementById('admin-app-list').innerHTML =
+          `<div class="empty">読み込みに失敗しました：${err.message}</div>`
+      }
+    } else {
+      try {
+        const myApps = await adminGetMyApplications(currentUser.id)
+        renderMyAppList(myApps)
+      } catch (err) {
+        document.getElementById('my-app-list').innerHTML =
+          `<div class="empty">読み込みに失敗しました：${err.message}</div>`
+      }
+    }
+  }
+
+  window.setAppFilter = (status) => {
+    appFilter = status
+    document.querySelectorAll('.filter-tab').forEach(b => {
+      b.classList.toggle('active', b.dataset.status === status)
+    })
+    renderAdminAppList()
+  }
+
+  function renderMyAppList(apps) {
+    const el = document.getElementById('my-app-list')
+    if (!apps || apps.length === 0) {
+      el.innerHTML = '<div class="empty">申請はまだありません</div>'
+      return
+    }
+    el.innerHTML = apps.map(a => `
+      <div class="app-card">
+        <div class="app-top">
+          <div class="app-title">${a.タイトル}</div>
+          <span class="status-badge ${a.ステータス}">${
+            a.ステータス === 'pending' ? '審査中' :
+            a.ステータス === 'approved' ? '承認済み' : '却下'
+          }</span>
+        </div>
+        <div class="app-meta">申請日：${formatDate(a.申請日?.slice(0,10))}</div>
+        ${a.却下理由 ? `<div class="reject-reason">却下理由：${a.却下理由}</div>` : ''}
+      </div>
+    `).join('')
+  }
+
+  function renderAdminAppList() {
+    const el = document.getElementById('admin-app-list')
+    const filtered = allApplicationsCache.filter(a => a.ステータス === appFilter)
+    if (!filtered || filtered.length === 0) {
+      el.innerHTML = '<div class="empty">該当する申請はありません</div>'
+      return
+    }
+    el.innerHTML = filtered.map(a => `
+      <div class="app-card">
+        <div class="app-top">
+          <div class="app-title">${a.タイトル}</div>
+          <span class="status-badge ${a.ステータス}">${
+            a.ステータス === 'pending' ? '審査中' :
+            a.ステータス === 'approved' ? '承認済み' : '却下'
+          }</span>
+        </div>
+        <div class="app-meta">
+          申請者：${a.申請者名 ?? '(不明)'} ／ 申請日：${formatDate(a.申請日?.slice(0,10))}
+          ${a.連絡先 ? ` ／ 連絡先：${a.連絡先}` : ''}
+        </div>
+        ${a.却下理由 ? `<div class="reject-reason">却下理由：${a.却下理由}</div>` : ''}
+        <div class="app-actions">
+          <button class="btn btn-outline btn-small" onclick="openAppDetail('${a.app_id}')">詳細を見る</button>
+          ${a.ステータス === 'pending' ? `
+            <button class="btn btn-primary btn-small" onclick="doApprove('${a.app_id}')">承認</button>
+            <button class="btn btn-danger btn-small" onclick="openRejectForm('${a.app_id}')">却下</button>
+          ` : ''}
+        </div>
+      </div>
+    `).join('')
+  }
+
+  window.openAppDetail = (appId) => {
+    const a = allApplicationsCache.find(x => x.app_id === appId)
+    if (!a) return
+    document.getElementById('app-detail-title').textContent = a.タイトル
+    const fields = [
+      ['申請者', a.申請者名], ['連絡先', a.連絡先], ['料金', a.料金!= null ? `¥${a.料金.toLocaleString()}` : null],
+      ['所要時間', a.所要時間], ['体験内容', a.体験内容詳細], ['注意事項', a.注意事項],
+      ['持ち物', a.持ち物], ['体験場所', a.体験場所], ['体験場所住所', a.体験場所住所],
+      ['集合場所', a.集合場所], ['集合場所住所', a.集合場所住所]
+    ].filter(([, v]) => v)
+    document.getElementById('app-detail-body').innerHTML = fields.map(([label, value]) => `
+      <div class="app-detail-row">
+        <div class="label">${label}</div>
+        <div class="value">${value}</div>
+      </div>
+    `).join('')
+    document.getElementById('app-detail-actions').innerHTML = `
+      <button class="btn btn-outline" onclick="document.getElementById('app-detail-modal-bg').classList.remove('show')">閉じる</button>
+      ${a.ステータス === 'pending' ? `
+        <button class="btn btn-primary" onclick="doApprove('${a.app_id}');document.getElementById('app-detail-modal-bg').classList.remove('show')">承認</button>
+        <button class="btn btn-danger" onclick="openRejectForm('${a.app_id}');document.getElementById('app-detail-modal-bg').classList.remove('show')">却下</button>
+      ` : ''}
+    `
+    document.getElementById('app-detail-modal-bg').classList.add('show')
+  }
+
+  window.doApprove = async (appId) => {
+    if (!confirm('この申請を承認しますか？\n体験内容に「非公開」で追加されます。')) return
+    try {
+      await adminApproveApplication(appId)
+      await loadApplications()
+      await loadExperiences()
+      alert('承認しました。体験内容タブから内容を確認・公開してください。')
+    } catch (err) {
+      alert('承認に失敗しました：' + err.message)
+    }
+  }
+
+  window.openRejectForm = (appId) => {
+    document.getElementById('reject-app-id').value = appId
+    document.getElementById('reject-reason').value = ''
+    document.getElementById('reject-modal-bg').classList.add('show')
+  }
+
+  window.closeRejectForm = () => {
+    document.getElementById('reject-modal-bg').classList.remove('show')
+  }
+
+  window.doReject = async () => {
+    const appId = document.getElementById('reject-app-id').value
+    const reason = document.getElementById('reject-reason').value.trim()
+    if (!reason) { alert('却下理由を入力してください'); return }
+    try {
+      await adminRejectApplication(appId, reason)
+      closeRejectForm()
+      loadApplications()
+    } catch (err) {
+      alert('却下に失敗しました：' + err.message)
+    }
+  }
+
+  window.openAppForm = () => {
+    ['app-title','app-subtitle','app-price','app-duration','app-detail',
+     'app-notice','app-belongings','app-place','app-place-address',
+     'app-meeting','app-meeting-address','app-contact']
+      .forEach(id => document.getElementById(id).value = '')
+    document.getElementById('app-modal-bg').classList.add('show')
+  }
+
+  window.closeAppForm = () => {
+    document.getElementById('app-modal-bg').classList.remove('show')
+  }
+
+  window.submitApplication = async () => {
+    const title = document.getElementById('app-title').value.trim()
+    const contact = document.getElementById('app-contact').value.trim()
+    if (!title) { alert('タイトルは必須です'); return }
+    if (!contact) { alert('連絡先は必須です'); return }
+
+    try {
+      await adminSubmitApplication(currentUser.id, {
+        タイトル:      title,
+        見出し説明:    document.getElementById('app-subtitle').value || null,
+        料金:          document.getElementById('app-price').value ? parseInt(document.getElementById('app-price').value) : null,
+        所要時間:      document.getElementById('app-duration').value || null,
+        体験内容詳細:  document.getElementById('app-detail').value || null,
+        注意事項:      document.getElementById('app-notice').value || null,
+        持ち物:        document.getElementById('app-belongings').value || null,
+        体験場所:      document.getElementById('app-place').value || null,
+        体験場所住所:  document.getElementById('app-place-address').value || null,
+        集合場所:      document.getElementById('app-meeting').value || null,
+        集合場所住所:  document.getElementById('app-meeting-address').value || null,
+        連絡先:        contact
+      })
+      closeAppForm()
+      alert('申請を送信しました。審査結果をお待ちください。')
+      loadApplications()
+    } catch (err) {
+      alert('送信に失敗しました：' + err.message)
     }
   }
 </script>

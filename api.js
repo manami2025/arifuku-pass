@@ -329,6 +329,75 @@ export async function adminCheckInReservation(reservationId) {
 }
 
 // -----------------------------------------------
+// 掲載申請
+// -----------------------------------------------
+
+/**
+ * 申請を送信（スタッフ用）
+ */
+export async function adminSubmitApplication(userId, params) {
+  const { data, error } = await supabase.rpc('admin_submit_application', {
+    p_user_id:        userId,
+    p_title:          params.タイトル,
+    p_subtitle:       params.見出し説明,
+    p_price:          params.料金,
+    p_duration:       params.所要時間,
+    p_detail:         params.体験内容詳細,
+    p_notice:         params.注意事項,
+    p_belongings:     params.持ち物,
+    p_place:          params.体験場所,
+    p_place_address:  params.体験場所住所,
+    p_meeting_place:  params.集合場所,
+    p_meeting_address: params.集合場所住所,
+    p_contact:        params.連絡先
+  })
+  if (error) throw error
+  return data
+}
+
+/**
+ * 申請一覧を取得（admin用・全件）
+ */
+export async function adminGetApplications() {
+  const { data, error } = await supabase.rpc('admin_get_applications')
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * 自分の申請一覧を取得（スタッフ用）
+ */
+export async function adminGetMyApplications(userId) {
+  const { data, error } = await supabase.rpc('admin_get_my_applications', {
+    p_user_id: userId
+  })
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * 申請を承認（体験内容に非公開で追加）
+ */
+export async function adminApproveApplication(appId) {
+  const { data, error } = await supabase.rpc('admin_approve_application', {
+    p_app_id: appId
+  })
+  if (error) throw error
+  return data
+}
+
+/**
+ * 申請を却下
+ */
+export async function adminRejectApplication(appId, reason) {
+  const { error } = await supabase.rpc('admin_reject_application', {
+    p_app_id: appId,
+    p_reason: reason
+  })
+  if (error) throw error
+}
+
+// -----------------------------------------------
 // 管理画面用
 // -----------------------------------------------
 
