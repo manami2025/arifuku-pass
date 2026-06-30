@@ -36,9 +36,13 @@
       letter-spacing: 0.12em;
       color: #3d6b4f;
     }
-    .mypage-btn {
+    .header-btns {
       position: absolute;
       right: 16px;
+      display: flex;
+      gap: 6px;
+    }
+    .mypage-btn {
       background: #fff;
       border: 1.5px solid #3d6b4f;
       color: #3d6b4f;
@@ -48,6 +52,12 @@
       border-radius: 16px;
       cursor: pointer;
       font-family: inherit;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 360px) {
+      .header-btns { gap: 4px; }
+      .mypage-btn { font-size: 10px; padding: 5px 8px; }
     }
 
     /* ヒーローカード */
@@ -485,7 +495,10 @@
   <header class="header">
     <img class="logo" src="ロゴ.png" alt="ARIFUKU PASS" onerror="this.style.display='none'">
     <span class="header-title">ARIFUKU PASS</span>
-    <button class="mypage-btn" onclick="location.href='mypage.html'">予約一覧</button>
+    <div class="header-btns">
+      <button class="mypage-btn" onclick="location.href='event-calendar.html'">イベントカレンダー</button>
+      <button class="mypage-btn" onclick="location.href='mypage.html'">予約一覧</button>
+    </div>
   </header>
 
   <!-- ヒーローカード -->

@@ -417,10 +417,22 @@ export async function adminRejectApplication(appId, reason) {
 // -----------------------------------------------
 
 /**
- * 開催中のイベント一覧を取得（一般ユーザー用）
+ * 開催中のイベント一覧を取得（一般ユーザー用・今日開催分）
  */
 export async function getActiveEvents() {
   const { data, error } = await supabase.rpc('get_active_events')
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * 指定月のイベント一覧を取得（カレンダー表示用）
+ * @param {string} yearMonth - 'YYYY-MM'
+ */
+export async function getEventsInMonth(yearMonth) {
+  const { data, error } = await supabase.rpc('get_events_in_month', {
+    p_year_month: yearMonth
+  })
   if (error) throw error
   return data ?? []
 }

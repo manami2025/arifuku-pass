@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>イベントカレンダー | 有福温泉 ARIFUKU PASS</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+      background: #e8e4dc;
+      color: #2c2c2c;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: #e8e4dc;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .back-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: #fff;
+      border: none;
+      font-size: 16px;
+      color: #3d6b4f;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      flex-shrink: 0;
+    }
+    .header-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #3d6b4f;
+    }
+
+    .content { padding: 8px 16px 32px; }
+
+    .cal-wrap {
+      background: #fff;
+      border: 1.5px solid #d6d0c4;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #3d6b4f;
+    }
+    .cal-nav {
+      background: none; border: none;
+      font-size: 20px; color: #3d6b4f;
+      cursor: pointer; padding: 0 10px; line-height: 1;
+    }
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 11px;
+      color: #999;
+      margin-bottom: 6px;
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: default;
+      background: transparent;
+      color: #ccc;
+      position: relative;
+      gap: 2px;
+    }
+    .cal-day.has-event {
+      background: #f0ebe4;
+      color: #3d6b4f;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .cal-day.has-event::after {
+      content: '';
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: #3d6b4f;
+    }
+    .cal-day.selected {
+      background: #3d6b4f;
+      color: #fff;
+    }
+    .cal-day.selected::after { background: #fff; }
+
+    .day-events {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .day-events .label {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 2px;
+    }
+
+    .event-card {
+      background: #fff;
+      border: 1.5px solid #d6d0c4;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .event-card img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      display: block;
+    }
+    .event-card-body { padding: 12px 14px; }
+    .event-card .title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .event-card .period { font-size: 12px; color: #3d6b4f; font-weight: 700; margin-bottom: 2px; }
+    .event-card .place { font-size: 12px; color: #888; margin-bottom: 6px; }
+    .event-card .desc { font-size: 12px; color: #555; line-height: 1.7; }
+
+    .empty {
+      text-align: center;
+      padding: 24px 20px;
+      color: #a08878;
+      font-size: 12px;
+    }
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #a08878;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <button class="back-btn" onclick="location.href='index.html'">‹</button>
+    <span class="header-title">イベントカレンダー</span>
+  </div>
+
+  <div class="content">
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="shiftMonth(-1)">‹</button>
+        <span id="cal-month-label"></span>
+        <button class="cal-nav" onclick="shiftMonth(1)">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <div class="day-events" id="day-events">
+      <div class="loading">読み込み中...</div>
+    </div>
+  </div>
+
+<script type="module">
+  import { LIFF_ID } from './config.js'
+  import { getEventsInMonth } from './api.js'
+
+  let viewYear, viewMonth
+  let eventsCache = []
+  let selectedDate = null
+
+  function pad2(n) { return String(n).padStart(2, '0') }
+  function toDateStr(y, m, d) { return `${y}-${pad2(m + 1)}-${pad2(d)}` }
+
+  function formatPeriod(start, end) {
+    const fmt = (s) => {
+      const d = new Date(s + 'T00:00:00')
+      return `${d.getMonth()+1}/${d.getDate()}`
+    }
+    if (!end || start === end) return fmt(start)
+    return `${fmt(start)}〜${fmt(end)}`
+  }
+
+  function isEventOnDate(ev, dateStr) {
+    const end = ev.終了日 ?? ev.開始日
+    return dateStr >= ev.開始日 && dateStr <= end
+  }
+
+  async function loadMonth() {
+    document.getElementById('cal-month-label').textContent = `${viewYear}年 ${viewMonth + 1}月`
+    const yearMonth = `${viewYear}-${pad2(viewMonth + 1)}`
+    try {
+      eventsCache = await getEventsInMonth(yearMonth)
+    } catch (err) {
+      eventsCache = []
+      console.error(err)
+    }
+    renderCalendar()
+    renderDayEvents()
+  }
+
+  window.shiftMonth = (diff) => {
+    viewMonth += diff
+    if (viewMonth < 0) { viewMonth = 11; viewYear-- }
+    if (viewMonth > 11) { viewMonth = 0; viewYear++ }
+    selectedDate = null
+    loadMonth()
+  }
+
+  function renderCalendar() {
+    const grid = document.getElementById('cal-grid')
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay()
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+
+    let html = ''
+    for (let i = 0; i < firstDay; i++) html += `<div class="cal-day"></div>`
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = toDateStr(viewYear, viewMonth, d)
+      const hasEvent = eventsCache.some(ev => isEventOnDate(ev, dateStr))
+      const isSelected = dateStr === selectedDate
+      const cls = ['cal-day']
+      if (hasEvent) cls.push('has-event')
+      if (isSelected) cls.push('selected')
+      html += `<div class="${cls.join(' ')}" ${hasEvent ? `onclick="selectDate('${dateStr}')"` : ''}>${d}</div>`
+    }
+    grid.innerHTML = html
+  }
+
+  window.selectDate = (dateStr) => {
+    selectedDate = dateStr
+    renderCalendar()
+    renderDayEvents()
+  }
+
+  function renderDayEvents() {
+    const el = document.getElementById('day-events')
+
+    if (!selectedDate) {
+      if (eventsCache.length === 0) {
+        el.innerHTML = '<div class="empty">この月のイベントはありません</div>'
+        return
+      }
+      el.innerHTML = `<div class="label">カレンダーの日付をタップすると詳細が見られます</div>` +
+        eventsCache.map(renderEventCard).join('')
+      return
+    }
+
+    const filtered = eventsCache.filter(ev => isEventOnDate(ev, selectedDate))
+    if (filtered.length === 0) {
+      el.innerHTML = '<div class="empty">この日のイベントはありません</div>'
+      return
+    }
+    el.innerHTML = filtered.map(renderEventCard).join('')
+  }
+
+  function renderEventCard(ev) {
+    return `
+      <div class="event-card">
+        ${ev.image_url ? `<img src="${ev.image_url}" alt="${ev.タイトル ?? ''}">` : ''}
+        <div class="event-card-body">
+          <div class="title">${ev.タイトル ?? ''}</div>
+          <div class="period">${formatPeriod(ev.開始日, ev.終了日)}</div>
+          ${ev.場所 ? `<div class="place">${ev.場所}</div>` : ''}
+          ${ev.説明 ? `<div class="desc">${ev.説明}</div>` : ''}
+        </div>
+      </div>
+    `
+  }
+
+  async function main() {
+    try {
+      await liff.init({ liffId: LIFF_ID })
+      if (!liff.isLoggedIn()) { liff.login(); return }
+
+      const now = new Date()
+      viewYear = now.getFullYear()
+      viewMonth = now.getMonth()
+      loadMonth()
+    } catch (err) {
+      document.getElementById('day-events').innerHTML =
+        `<div class="empty">読み込みに失敗しました<br><small>${err.message}</small></div>`
+    }
+  }
+
+  main()
+</script>
+
+</body>
+</html>
