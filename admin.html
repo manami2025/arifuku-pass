@@ -880,6 +880,7 @@
           <button class="tab-btn" data-tab="slots">予約枠</button>
           <button class="tab-btn" data-tab="reservations">予約一覧</button>
           <button class="tab-btn" id="tab-applications-btn" data-tab="applications">掲載申請</button>
+          <button class="tab-btn" id="tab-events-btn" data-tab="events" style="display:none;">イベント</button>
           <button class="tab-btn" id="tab-users-btn" data-tab="users" style="display:none;">ユーザー管理</button>
         </div>
         <div class="user-info">
@@ -967,6 +968,17 @@
         <div class="app-list" id="admin-app-list">
           <div class="empty">読み込み中...</div>
         </div>
+      </div>
+    </div>
+
+    <!-- イベント管理パネル（管理者のみ） -->
+    <div class="panel" id="panel-events">
+      <div class="panel-head">
+        <h2>イベント管理</h2>
+        <button class="btn btn-primary" onclick="openEventForm()">＋ イベントを追加</button>
+      </div>
+      <div class="exp-list" id="event-admin-list">
+        <div class="empty">読み込み中...</div>
       </div>
     </div>
 
@@ -1184,6 +1196,26 @@
     </div>
   </div>
 
+  <!-- イベントフォームモーダル -->
+  <div class="modal-bg" id="event-modal-bg">
+    <div class="modal">
+      <h3 id="event-modal-title">イベントを追加</h3>
+      <input type="hidden" id="event-id">
+      <div class="field"><label>タイトル *</label><input id="event-title"></div>
+      <div class="field"><label>説明</label><textarea id="event-description"></textarea></div>
+      <div class="field"><label>画像URL</label><input id="event-image" placeholder="images/event1.jpg"></div>
+      <div class="field-row">
+        <div class="field"><label>開始日 *</label><input id="event-start-date" type="date"></div>
+        <div class="field"><label>終了日</label><input id="event-end-date" type="date"></div>
+      </div>
+      <div class="field"><label>場所</label><input id="event-place"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeEventForm()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveEvent()">保存</button>
+      </div>
+    </div>
+  </div>
+
 <script type="module">
   import {
     adminGetExperiences, adminInsertExperience, adminUpdateExperience,
@@ -1194,7 +1226,9 @@
     adminAssignStaff, adminUnassignStaff, adminGetStaffForExperience,
     adminGetMyExperiences, adminGetReservations, adminCheckInReservation,
     adminSubmitApplication, adminGetApplications, adminGetMyApplications,
-    adminApproveApplication, adminRejectApplication
+    adminApproveApplication, adminRejectApplication,
+    adminGetEvents, adminInsertEvent, adminUpdateEvent,
+    adminToggleEventVisibility, adminDeleteEvent
   } from './api.js'
 
   // ---------------- ログイン ----------------
@@ -1245,6 +1279,8 @@
       currentUser.権限 === 'admin' ? 'inline-block' : 'none'
     // 申請タブはスタッフ・管理者ともに表示（表示内容が切り替わる）
     document.getElementById('tab-applications-btn').style.display = 'inline-block'
+    document.getElementById('tab-events-btn').style.display =
+      currentUser.権限 === 'admin' ? 'inline-block' : 'none'
     initApp()
   }
 
@@ -1268,6 +1304,7 @@
       if (btn.dataset.tab === 'reservations') loadReservations()
       if (btn.dataset.tab === 'users') loadUsers()
       if (btn.dataset.tab === 'applications') loadApplications()
+      if (btn.dataset.tab === 'events') loadEvents()
     })
   })
 
@@ -2242,6 +2279,130 @@
       loadApplications()
     } catch (err) {
       alert('送信に失敗しました：' + err.message)
+    }
+  }
+
+  // ---------------- イベント管理 ----------------
+  let eventsCache = []
+
+  async function loadEvents() {
+    const el = document.getElementById('event-admin-list')
+    el.innerHTML = '<div class="empty">読み込み中...</div>'
+    try {
+      eventsCache = await adminGetEvents()
+      renderEventList()
+    } catch (err) {
+      el.innerHTML = `<div class="empty">読み込みに失敗しました：${err.message}</div>`
+    }
+  }
+
+  function formatEventPeriod(start, end) {
+    const fmt = (s) => {
+      if (!s) return ''
+      const d = new Date(s + 'T00:00:00')
+      return `${d.getMonth()+1}/${d.getDate()}`
+    }
+    if (!end || start === end) return fmt(start)
+    return `${fmt(start)}〜${fmt(end)}`
+  }
+
+  function renderEventList() {
+    const el = document.getElementById('event-admin-list')
+    if (eventsCache.length === 0) {
+      el.innerHTML = '<div class="empty">イベントがまだありません</div>'
+      return
+    }
+    el.innerHTML = eventsCache.map(e => `
+      <div class="exp-row">
+        ${e.image_url
+          ? `<img src="${e.image_url}" alt="">`
+          : `<div class="no-img">🎪</div>`
+        }
+        <div class="info">
+          <div class="title">${e.タイトル ?? ''}</div>
+          <div class="meta">
+            ${formatEventPeriod(e.開始日, e.終了日)} ${e.場所 ? '・' + e.場所 : ''}
+            <span class="badge ${e.公開 ? 'badge-on' : 'badge-off'}">${e.公開 ? '公開中' : '非公開'}</span>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="toggle-switch ${e.公開 ? 'on' : ''}" onclick="toggleEventVisibility('${e.id}', ${!e.公開})" title="公開切替"></button>
+          <button class="btn btn-outline btn-small" onclick="openEventForm('${e.id}')">編集</button>
+          <button class="btn btn-danger btn-small" onclick="deleteEventItem('${e.id}')">削除</button>
+        </div>
+      </div>
+    `).join('')
+  }
+
+  window.toggleEventVisibility = async (id, newState) => {
+    try {
+      await adminToggleEventVisibility(id, newState)
+      loadEvents()
+    } catch (err) {
+      alert('更新に失敗しました：' + err.message)
+    }
+  }
+
+  window.deleteEventItem = async (id) => {
+    if (!confirm('このイベントを削除しますか？')) return
+    try {
+      await adminDeleteEvent(id)
+      loadEvents()
+    } catch (err) {
+      alert('削除に失敗しました：' + err.message)
+    }
+  }
+
+  window.openEventForm = (id) => {
+    document.getElementById('event-modal-bg').classList.add('show')
+    if (id) {
+      const e = eventsCache.find(x => x.id === id)
+      document.getElementById('event-modal-title').textContent = 'イベントを編集'
+      document.getElementById('event-id').value = e.id
+      document.getElementById('event-title').value = e.タイトル ?? ''
+      document.getElementById('event-description').value = e.説明 ?? ''
+      document.getElementById('event-image').value = e.image_url ?? ''
+      document.getElementById('event-start-date').value = e.開始日 ?? ''
+      document.getElementById('event-end-date').value = e.終了日 ?? ''
+      document.getElementById('event-place').value = e.場所 ?? ''
+    } else {
+      document.getElementById('event-modal-title').textContent = 'イベントを追加'
+      ;['event-id','event-title','event-description','event-image',
+        'event-start-date','event-end-date','event-place']
+        .forEach(id => document.getElementById(id).value = '')
+    }
+  }
+
+  window.closeEventForm = () => {
+    document.getElementById('event-modal-bg').classList.remove('show')
+  }
+
+  window.saveEvent = async () => {
+    const id = document.getElementById('event-id').value
+    const title = document.getElementById('event-title').value.trim()
+    const startDate = document.getElementById('event-start-date').value
+    if (!title) { alert('タイトルを入力してください'); return }
+    if (!startDate) { alert('開始日を入力してください'); return }
+
+    const payload = {
+      タイトル: title,
+      説明:     document.getElementById('event-description').value || null,
+      image_url: document.getElementById('event-image').value || null,
+      開始日:   startDate,
+      終了日:   document.getElementById('event-end-date').value || null,
+      場所:     document.getElementById('event-place').value || null,
+    }
+
+    try {
+      if (id) {
+        await adminUpdateEvent(id, payload)
+      } else {
+        await adminInsertEvent(payload)
+      }
+      closeEventForm()
+      loadEvents()
+    } catch (err) {
+      alert('保存に失敗しました：' + err.message)
     }
   }
 </script>

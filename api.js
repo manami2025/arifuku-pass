@@ -128,6 +128,21 @@ export async function insertReservation(params) {
 }
 
 /**
+ * 指定期間に空き枠がある体験一覧を取得
+ * @param {string} startDate - 'YYYY-MM-DD'
+ * @param {string} endDate   - 'YYYY-MM-DD'
+ * @returns {Promise<Array>}
+ */
+export async function getExperiencesWithSlotsInRange(startDate, endDate) {
+  const { data, error } = await supabase.rpc('get_experiences_with_slots_in_range', {
+    p_start_date: startDate,
+    p_end_date: endDate
+  })
+  if (error) throw error
+  return data ?? []
+}
+
+/**
  * 指定体験の空き枠一覧を取得
  * @param {string} experienceId
  * @returns {Promise<Array>}
@@ -394,6 +409,79 @@ export async function adminRejectApplication(appId, reason) {
     p_app_id: appId,
     p_reason: reason
   })
+  if (error) throw error
+}
+
+// -----------------------------------------------
+// イベント
+// -----------------------------------------------
+
+/**
+ * 開催中のイベント一覧を取得（一般ユーザー用）
+ */
+export async function getActiveEvents() {
+  const { data, error } = await supabase.rpc('get_active_events')
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * イベント一覧を取得（管理用・全件）
+ */
+export async function adminGetEvents() {
+  const { data, error } = await supabase.rpc('admin_get_events')
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * イベントを新規作成
+ */
+export async function adminInsertEvent(params) {
+  const { data, error } = await supabase.rpc('admin_insert_event', {
+    p_title:        params.タイトル,
+    p_description:  params.説明,
+    p_image_url:    params.image_url,
+    p_start_date:   params.開始日,
+    p_end_date:     params.終了日,
+    p_place:        params.場所
+  })
+  if (error) throw error
+  return data
+}
+
+/**
+ * イベントを更新
+ */
+export async function adminUpdateEvent(id, params) {
+  const { error } = await supabase.rpc('admin_update_event', {
+    p_id:           id,
+    p_title:        params.タイトル,
+    p_description:  params.説明,
+    p_image_url:    params.image_url,
+    p_start_date:   params.開始日,
+    p_end_date:     params.終了日,
+    p_place:        params.場所
+  })
+  if (error) throw error
+}
+
+/**
+ * イベントの公開/非公開を切り替え
+ */
+export async function adminToggleEventVisibility(id, visible) {
+  const { error } = await supabase.rpc('admin_toggle_event_visibility', {
+    p_id: id,
+    p_visible: visible
+  })
+  if (error) throw error
+}
+
+/**
+ * イベントを削除
+ */
+export async function adminDeleteEvent(id) {
+  const { error } = await supabase.rpc('admin_delete_event', { p_id: id })
   if (error) throw error
 }
 
