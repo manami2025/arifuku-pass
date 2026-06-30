@@ -433,6 +433,46 @@
     flex-shrink: 0;
   }
 
+  .amount-summary {
+    margin-top: 16px;
+    background: #fff;
+    border: 1.5px solid #d6d0c4;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .amount-summary-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #3d6b4f;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1.5px solid #e8e4dc;
+  }
+  .amount-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #444;
+    padding: 5px 0;
+  }
+  .amount-row .amount-label { color: #555; }
+  .amount-row .amount-value { font-weight: 700; color: #2c2c2c; }
+  .amount-empty {
+    font-size: 12px;
+    color: #a08878;
+    padding: 6px 0;
+  }
+  .amount-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 15px;
+    font-weight: 800;
+    color: #3d6b4f;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1.5px solid #e8e4dc;
+  }
+
   /* ---------- ユーザー管理 ---------- */
   .user-list { display: flex; flex-direction: column; gap: 10px; }
   .user-row {
@@ -1861,6 +1901,20 @@
       return
     }
     const sorted = [...filtered].sort((a, b) => (a.時間 ?? '').localeCompare(b.時間 ?? ''))
+
+    // 受付済みの予約のみで金額集計
+    const checkedIn = sorted.filter(r => r.受付済み)
+    const subtotalsByExp = {}
+    let grandTotal = 0
+    for (const r of checkedIn) {
+      const unitPrice = r.料金 ?? 0
+      const amount = unitPrice * (r.人数 ?? 1)
+      const key = r.タイトル ?? '(削除済み体験)'
+      subtotalsByExp[key] = (subtotalsByExp[key] || 0) + amount
+      grandTotal += amount
+    }
+    const subtotalKeys = Object.keys(subtotalsByExp)
+
     el.innerHTML = `
       <div class="day-label">${formatDate(resSelectedDate)}の予約（${sorted.length}件）</div>
       ${sorted.map(r => `
@@ -1875,6 +1929,20 @@
           }
         </div>
       `).join('')}
+
+      <div class="amount-summary">
+        <div class="amount-summary-title">受付済みの参加料金（${checkedIn.length}件）</div>
+        ${subtotalKeys.length > 0 ? subtotalKeys.map(key => `
+          <div class="amount-row">
+            <span class="amount-label">${key}</span>
+            <span class="amount-value">¥${subtotalsByExp[key].toLocaleString()}</span>
+          </div>
+        `).join('') : '<div class="amount-empty">まだ受付済みの予約がありません</div>'}
+        <div class="amount-total-row">
+          <span>合計</span>
+          <span>¥${grandTotal.toLocaleString()}</span>
+        </div>
+      </div>
     `
   }
 
