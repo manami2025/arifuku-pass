@@ -397,11 +397,13 @@
   <svg width="0" height="0" style="position:absolute">
     <defs>
       <symbol id="icon-onsen" viewBox="0 0 24 24">
-        <path fill="currentColor" d="M12 2c-.6 1.6-2 3-2 4.8a2 2 0 0 0 4 0c0-1.8-1.4-3.2-2-4.8z"/>
-        <path fill="currentColor" d="M4 13a8 8 0 0 1 16 0v1H4v-1z" opacity="0.85"/>
-        <path fill="currentColor" d="M3 16h18v2a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-2z"/>
-        <circle cx="7.5" cy="9" r="1.2" fill="currentColor" opacity="0.6"/>
-        <circle cx="16.5" cy="9.5" r="1" fill="currentColor" opacity="0.5"/>
+        <ellipse cx="12" cy="18.4" rx="7.2" ry="2.6" fill="currentColor"/>
+        <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          d="M6.2 13.4q1.4-2.2 0-4.4 -1.4-2.2 0-4.4"/>
+        <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          d="M12 14q1.4-2.4 0-4.8 -1.4-2.4 0-4.8"/>
+        <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          d="M17.8 13.4q1.4-2.2 0-4.4 -1.4-2.2 0-4.4"/>
       </symbol>
       <symbol id="icon-clock" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -423,12 +425,18 @@
   <div id="splash">
     <div class="splash-inner">
       <div class="splash-icon-wrap">
-        <div class="splash-icon"><svg width="56" height="56"><use href="#icon-onsen"/></svg></div>
-        <div class="steam-wrap">
-          <div class="steam s1"></div>
-          <div class="steam s2"></div>
-          <div class="steam s3"></div>
-        </div>
+        <svg width="100" height="120" viewBox="0 0 100 120">
+          <ellipse cx="50" cy="92" rx="30" ry="11" fill="#ffffff"/>
+          <path id="splashSteam1" d="M 26 66 Q 32 56 26 46 Q 20 36 26 26" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+          <path id="splashSteam2" d="M 50 70 Q 56 58 50 46 Q 44 34 50 22" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+          <path id="splashSteam3" d="M 74 66 Q 80 56 74 46 Q 68 36 74 26" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+          <animateTransform xlink:href="#splashSteam1" attributeName="transform" type="translate" values="0 6; 0 -6; 0 6" dur="2.2s" repeatCount="indefinite"/>
+          <animate xlink:href="#splashSteam1" attributeName="opacity" values="0.5;1;0.5" dur="2.2s" repeatCount="indefinite"/>
+          <animateTransform xlink:href="#splashSteam2" attributeName="transform" type="translate" values="0 6; 0 -6; 0 6" dur="2.2s" begin="0.5s" repeatCount="indefinite"/>
+          <animate xlink:href="#splashSteam2" attributeName="opacity" values="0.5;1;0.5" dur="2.2s" begin="0.5s" repeatCount="indefinite"/>
+          <animateTransform xlink:href="#splashSteam3" attributeName="transform" type="translate" values="0 6; 0 -6; 0 6" dur="2.2s" begin="1s" repeatCount="indefinite"/>
+          <animate xlink:href="#splashSteam3" attributeName="opacity" values="0.5;1;0.5" dur="2.2s" begin="1s" repeatCount="indefinite"/>
+        </svg>
       </div>
       <div class="splash-title">ARIFUKU PASS</div>
       <div class="splash-sub">有福温泉</div>
@@ -457,45 +465,7 @@
       gap: 16px;
     }
     .splash-icon-wrap {
-      position: relative;
-      width: 90px;
-      height: 110px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-    }
-    .splash-icon {
-      color: #fff;
-      line-height: 1;
       filter: drop-shadow(0 4px 16px rgba(0,0,0,0.18));
-    }
-    .steam-wrap {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      align-items: flex-end;
-      height: 44px;
-    }
-    .steam {
-      width: 6px;
-      border-radius: 4px;
-      background: rgba(255,255,255,0.55);
-      animation: steam-rise 1.8s ease-in-out infinite;
-      transform-origin: bottom center;
-    }
-    .steam.s1 { height: 28px; animation-delay: 0s; }
-    .steam.s2 { height: 36px; animation-delay: 0.3s; }
-    .steam.s3 { height: 22px; animation-delay: 0.6s; }
-
-    @keyframes steam-rise {
-      0%   { transform: scaleY(0.4) translateY(0); opacity: 0; }
-      30%  { opacity: 0.9; }
-      70%  { opacity: 0.5; }
-      100% { transform: scaleY(1.2) translateY(-18px); opacity: 0; }
     }
 
     .splash-title {
@@ -554,7 +524,7 @@
   <!-- 開催中のイベント -->
   <div class="event-section" id="event-section" style="display:none;">
     <p class="section-title" style="text-align:left;padding:0 4px;margin-bottom:10px;">
-      <svg width="14" height="14"><use href="#icon-calendar"/></svg> 開催中のイベント
+      <svg width="14" height="14"><use href="#icon-calendar"/></svg> 開催予定・開催中のイベント
     </p>
     <div class="event-list" id="event-list"></div>
   </div>
